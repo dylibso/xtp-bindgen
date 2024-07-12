@@ -1,8 +1,13 @@
 import * as parser from "./parser"
 
+export interface XtpItemType extends Omit<parser.XtpItemType, '$ref'> {
+  '$ref': Schema | null;
+}
+
 export interface Property extends Omit<parser.Property, '$ref'> {
   '$ref': Schema | null;
   nullable: boolean;
+  items?: XtpItemType;
 }
 
 export interface Schema extends Omit<parser.Schema, 'properties'> {
@@ -72,7 +77,7 @@ function parseSchemaRef(ref: string): string {
   return parts[2]
 }
 
-function normalizeProp(p: Property, s: Schema) {
+function normalizeProp(p: Property | XtpItemType, s: Schema) {
   p.$ref = s
   p.type = s.type || 'string' // TODO: revisit string default, isn't type required?
   p.contentType = p.contentType || s.contentType
@@ -101,6 +106,14 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
         )
       }
 
+      if (p.items?.$ref) {
+        normalizeProp(
+          //@ts-ignore
+          p.items!,
+          schemas[parseSchemaRef(p.items!.$ref)]
+        )
+      }
+
       // add set nullable property from the required array
       // TODO: consider supporting nullable instead of required
       // @ts-ignore
@@ -114,18 +127,34 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       // they have the same type
       // deref input and output
       const normEx = ex as Export
-      if (ex.input && ex.input?.$ref) {
+      if (ex.input?.$ref) {
         normalizeProp(
           normEx.input!,
           schemas[parseSchemaRef(ex.input.$ref)]
         )
       }
+      if (ex.input?.items?.$ref) {
+        normalizeProp(
+          //@ts-ignore
+          normEx.input.items!,
+          schemas[parseSchemaRef(ex.input.items.$ref)]
+        )
+      }
+
       if (ex.output?.$ref) {
         normalizeProp(
           normEx.output!,
           schemas[parseSchemaRef(ex.output.$ref)]
         )
       }
+      if (ex.output?.items?.$ref) {
+        normalizeProp(
+          // @ts-ignore
+          normEx.output.items!,
+          schemas[parseSchemaRef(ex.output.items.$ref)]
+        )
+      }
+
       exports.push(normEx)
     } else if (parser.isSimpleExport(ex)) {
       // it's just a name
@@ -146,12 +175,28 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
         schemas[parseSchemaRef(im.input.$ref)]
       )
     }
+    if (im.input?.items?.$ref) {
+      normalizeProp(
+        // @ts-ignore
+        normIm.input.items!,
+        schemas[parseSchemaRef(im.input.items.$ref)]
+      )
+    }
+
     if (im.output?.$ref) {
       normalizeProp(
         normIm.output!,
         schemas[parseSchemaRef(im.output.$ref)]
       )
     }
+    if (im.output?.items?.$ref) {
+      normalizeProp(
+        // @ts-ignore
+        normIm.output.items!,
+        schemas[parseSchemaRef(im.output.items.$ref)]
+      )
+    }
+
     imports.push(normIm)
   })
 

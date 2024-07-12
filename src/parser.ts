@@ -69,9 +69,23 @@ export type XtpType =
 export type XtpFormat =
   'int32' | 'int64' | 'float' | 'double' | 'date' | 'date-time' | 'byte';
 
+export interface XtpItemType {
+  type: XtpType;
+  // NOTE: needs to be any to satisfy type satisfy
+  // type system in normalizer
+  "$ref"?: any;
+
+  contentType?: string;
+  description?: string;
+
+  // we only support one nested item type for now
+  // type: XtpType | XtpItemType;
+}
+
 export interface Property {
   name: string;
-  type: XtpType
+  type: XtpType;
+  items?: XtpItemType;
   format?: XtpFormat;
   contentType?: MimeType;
   description?: string;
