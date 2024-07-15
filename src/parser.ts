@@ -28,14 +28,6 @@ export function isSimpleExport(exportItem: Export): exportItem is SimpleExport {
   return typeof exportItem === 'string';
 }
 
-export function isProperty(p: Property): p is Property {
-  return true
-}
-
-export function isSchema(s: Schema): s is Schema {
-  return true
-}
-
 export type SimpleExport = string;
 
 export interface ComplexExport {

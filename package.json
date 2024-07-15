@@ -1,6 +1,6 @@
 {
   "name": "@dylibso/xtp-bindgen",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "XTP bindgen helper library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,7 +19,8 @@
     "esbuild-plugin-d.ts": "^1.2.3",
     "jest": "^29.0.0",
     "ts-jest": "^29.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "@extism/js-pdk": "^1.0.1"
   },
   "files": [
     "dist"

@@ -10,6 +10,10 @@ export interface Property extends Omit<parser.Property, '$ref'> {
   items?: XtpItemType;
 }
 
+export function isProperty(p: any): p is Property {
+  return !!p.type
+}
+
 export interface Schema extends Omit<parser.Schema, 'properties'> {
   properties: Property[];
 }
@@ -37,6 +41,10 @@ export interface Export {
   codeSamples?: parser.CodeSample[];
   input?: Property;
   output?: Property;
+}
+
+export function isExport(e: any): e is Export {
+  return parser.isSimpleExport(e) || parser.isComplexExport(e)
 }
 
 // These are the same for now
