@@ -1,4 +1,5 @@
 import { parseAndNormalizeJson, Property, Import, Export, isProperty, isExport, XtpSchema } from "./normalizer";
+import { CodeSample } from "./parser";
 export * from "./normalizer"
 
 export function parse(schema: string) {
@@ -15,13 +16,18 @@ export interface XtpProject {
 export interface XtpContext {
   schema: XtpSchema;
   project: XtpProject;
-  featureFlags?: string[];
+  featureFlags?: { [keyof: string]: any }
 }
 
 export function getContext(): XtpContext {
   const ctx = JSON.parse(Config.get('ctx') || '{}')
   ctx.schema = parse(JSON.stringify(ctx.schema))
+  ctx.featureFlags = (ctx.featureFlags || []).reduce((a: any, c: any) => { a[c] = true; return a }, {})
   return ctx
+}
+
+function firstCodeSample(ex: Export, lang: string): CodeSample {
+  return ex.codeSamples!.find(s => s.lang.toLowerCase() === lang.toLowerCase())!
 }
 
 // template helpers 
@@ -58,4 +64,5 @@ export const helpers = {
   hasComment,
   formatCommentLine,
   formatCommentBlock,
+  firstCodeSample,
 }

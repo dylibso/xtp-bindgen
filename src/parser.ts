@@ -39,7 +39,7 @@ export interface ComplexExport {
 }
 
 export interface CodeSample {
-  lang: 'typescript';
+  lang: string;
   source: string;
   label?: string;
 }
