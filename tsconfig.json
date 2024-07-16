@@ -19,10 +19,10 @@
     ]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "dist"
   ],
   "exclude": [
-    "node_modules",
-    "dist"
+    "node_modules"
   ]
 }
