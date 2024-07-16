@@ -26,8 +26,8 @@ export function getContext(): XtpContext {
   return ctx
 }
 
-function firstCodeSample(ex: Export, lang: string): CodeSample {
-  return ex.codeSamples!.find(s => s.lang.toLowerCase() === lang.toLowerCase())!
+function codeSamples(ex: Export, lang: string): CodeSample[] {
+  return ex.codeSamples!.filter(s => s.lang.toLowerCase() === lang.toLowerCase())!
 }
 
 // template helpers 
@@ -64,5 +64,5 @@ export const helpers = {
   hasComment,
   formatCommentLine,
   formatCommentBlock,
-  firstCodeSample,
+  codeSamples,
 }
