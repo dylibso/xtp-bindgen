@@ -1,5 +1,4 @@
 import { parse } from '../src/index';
-import { Schema } from '../src/normalizer'
 
 const testSchema = {
   "exports": [

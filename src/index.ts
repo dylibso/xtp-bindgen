@@ -1,11 +1,24 @@
-import { parseAndNormalizeJson, Property, Import, Export, isProperty, isExport } from "./normalizer";
+import { parseAndNormalizeJson, Property, Import, Export, isProperty, isExport, XtpSchema } from "./normalizer";
 export * from "./normalizer"
 
 export function parse(schema: string) {
   return parseAndNormalizeJson(schema)
 }
 
-export function getContext(): any {
+export interface XtpProject {
+  name: string;
+  description: string;
+  appId: string;
+  extensionPointId: string;
+}
+
+export interface XtpContext {
+  schema: XtpSchema;
+  project: XtpProject;
+  featureFlags?: string[];
+}
+
+export function getContext(): XtpContext {
   const ctx = JSON.parse(Config.get('ctx') || '{}')
   ctx.schema = parse(JSON.stringify(ctx.schema))
   return ctx
