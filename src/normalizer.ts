@@ -122,10 +122,10 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
         )
       }
 
-      // add set nullable property from the required array
-      // TODO: consider supporting nullable instead of required
-      // @ts-ignore
-      p.nullable = !s.required?.includes(p.name)
+      // nullable is true by default
+      if (p.nullable === undefined) {
+        p.nullable = true;
+      }
     })
   })
 

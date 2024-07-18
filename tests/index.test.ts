@@ -75,40 +75,38 @@ const testSchema = {
     },
     {
       "name": "ComplexObject",
-      "required": [
-        "ghost",
-        "aBoolean",
-        "aString",
-        "anInt"
-      ],
       "properties": [
         {
           "$ref": "#/schemas/GhostGang",
           "name": "ghost",
-          "description": "I can override the description for the property here"
+          "description": "I can override the description for the property here",
+          "nullable": false
         },
         {
           "name": "aBoolean",
           "type": "boolean",
-          "description": "A boolean prop"
+          "description": "A boolean prop",
+          "nullable": false
         },
         {
           "name": "aString",
           "type": "integer",
           "format": "int32",
-          "description": "An int prop"
+          "description": "An int prop",
+          "nullable": false
         },
         {
           "name": "anInt",
           "type": "integer",
           "format": "int32",
-          "description": "An int prop"
+          "description": "An int prop",
+          "nullable": false
         },
         {
           "name": "anOptionalDate",
           "type": "string",
           "format": "date-time",
-          "description": "A datetime object, we will automatically serialize and deserialize\nthis for you.\n"
+          "description": "A datetime object, we will automatically serialize and deserialize\nthis for you.\n",
         }
       ],
       "contentType": "application/json",

@@ -52,7 +52,6 @@ export interface Schema {
   type?: XtpType;
   enum?: string[];
   contentType?: MimeType;
-  required?: string[];
   properties?: Property[];
 }
 
@@ -84,6 +83,7 @@ export interface Property {
   minimum?: number;
   maximum?: number;
   default?: string;
+  nullable?: boolean;
 
   // NOTE: needs to be any to satisfy type satisfy
   // type system in normalizer
