@@ -30,10 +30,16 @@ export interface XtpContext {
 export function getContext(): XtpContext {
   const ctx = JSON.parse(Config.get("ctx") || "{}");
   ctx.schema = parse(JSON.stringify(ctx.schema));
-  ctx.featureFlags = (ctx.featureFlags || []).reduce((a: any, c: any) => {
-    a[c] = true;
-    return a;
-  }, {});
+
+  if (Array.isArray(ctx.featureFlags)) {
+    ctx.featureFlags = ctx.featureFlags.reduce((a: any, c: any) => {
+      a[c] = true;
+      return a;
+    }, {});
+  } else {
+    ctx.featureFlags = ctx.featureFlags || {};
+  }
+
   return ctx;
 }
 
