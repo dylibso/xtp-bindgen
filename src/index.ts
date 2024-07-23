@@ -83,9 +83,34 @@ function formatCommentBlock(s: string | null, prefix?: string) {
   return s.trimEnd().replace(/\n/g, `\n${prefix}`);
 }
 
+
+function isDateTime(p: Property | null): boolean {
+  if (!p) return false
+  return p.type === 'string' && p.format === 'date-time'
+}
+
+function isJsonEncoded(p: Property | null): boolean {
+  if (!p) return false
+  return p.contentType === 'application/json'
+}
+
+function isUtf8Encoded(p: Property | null): boolean {
+  if (!p) return false
+  return p.contentType === 'text/plain; charset=UTF-8'
+}
+
+function isPrimitive(p: Property): boolean {
+  if (!p.$ref) return true
+  return !!p.$ref.enum && !p.$ref.properties
+}
+
 export const helpers = {
   hasComment,
   formatCommentLine,
   formatCommentBlock,
   codeSamples,
+  isDateTime,
+  isPrimitive,
+  isJsonEncoded,
+  isUtf8Encoded,
 };
