@@ -6,9 +6,11 @@ export interface V0Schema {
 
 export interface V1Schema {
   version: Version;
-  exports: Export[];
-  imports?: Import[];
-  schemas?: Schema[];
+  exports: { [name: string]: Export };
+  imports?: { [name: string]: Import };
+  components?: {
+    schemas?: { [name: string]: Schema };
+  }
 }
 
 type VUnknownSchema = V0Schema | V1Schema
@@ -21,7 +23,7 @@ export type Export = SimpleExport | ComplexExport;
 export type Import = ComplexExport
 
 export function isComplexExport(exportItem: Export): exportItem is ComplexExport {
-  return typeof exportItem === 'object' && 'name' in exportItem;
+  return typeof exportItem === 'object' && 'description' in exportItem;
 }
 
 export function isSimpleExport(exportItem: Export): exportItem is SimpleExport {
@@ -47,19 +49,17 @@ export interface CodeSample {
 export type MimeType = 'application/json' | 'text/plain; charset=UTF-8'
 
 export interface Schema {
-  name: string;
   description: string;
   type?: XtpType;
   enum?: string[];
   contentType?: MimeType;
-  required?: string[];
-  properties?: Property[];
+  properties?: { [name: string]: Property };
 }
 
 export type XtpType =
   'integer' | 'string' | 'number' | 'boolean' | 'object' | 'array' | 'buffer';
 export type XtpFormat =
-  'int32' | 'int64' | 'float' | 'double' | 'date' | 'date-time' | 'byte';
+  'int32' | 'int64' | 'float' | 'double' | 'date-time' | 'byte';
 
 export interface XtpItemType {
   type: XtpType;
@@ -75,15 +75,12 @@ export interface XtpItemType {
 }
 
 export interface Property {
-  name: string;
   type: XtpType;
   items?: XtpItemType;
   format?: XtpFormat;
   contentType?: MimeType;
   description?: string;
-  minimum?: number;
-  maximum?: number;
-  default?: string;
+  nullable?: boolean;
 
   // NOTE: needs to be any to satisfy type satisfy
   // type system in normalizer
