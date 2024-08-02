@@ -5,6 +5,7 @@ import {
   isProperty,
   parseAndNormalizeJson,
   Property,
+  Parameter,
   XtpSchema,
 } from "./normalizer";
 import { CodeSample } from "./parser";
@@ -54,7 +55,7 @@ function codeSamples(ex: Export, lang: string): CodeSample[] {
 }
 
 // template helpers
-function hasComment(p: Property | Export | Import | null | undefined): boolean {
+function hasComment(p: Parameter | Property | Export | Import | null | undefined): boolean {
   if (!p) return false;
 
   if (isProperty(p)) {
@@ -89,12 +90,12 @@ function isDateTime(p: Property | null): boolean {
   return p.type === 'string' && p.format === 'date-time'
 }
 
-function isJsonEncoded(p: Property | null): boolean {
+function isJsonEncoded(p: Parameter | null): boolean {
   if (!p) return false
   return p.contentType === 'application/json'
 }
 
-function isUtf8Encoded(p: Property | null): boolean {
+function isUtf8Encoded(p: Parameter | null): boolean {
   if (!p) return false
   return p.contentType === 'text/plain; charset=UTF-8'
 }

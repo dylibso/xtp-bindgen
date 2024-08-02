@@ -4,7 +4,7 @@ export interface XtpItemType extends Omit<parser.XtpItemType, '$ref'> {
   '$ref': Schema | null;
 }
 
-export interface Property extends Omit<parser.Property, '$ref'> {
+export interface Property extends Omit<parser.Property, '$ref' | 'contentType'> {
   '$ref': Schema | null;
   nullable: boolean;
   items?: XtpItemType;
@@ -36,13 +36,14 @@ export type Version = 'v0' | 'v1';
 export type XtpType = parser.XtpType
 export type XtpFormat = parser.XtpFormat
 export type MimeType = parser.MimeType
+export type Parameter = parser.Parameter
 
 export interface Export {
   name: string;
   description?: string;
   codeSamples?: parser.CodeSample[];
-  input?: Property;
-  output?: Property;
+  input?: Parameter;
+  output?: Parameter;
 }
 
 export function isExport(e: any): e is Export {
@@ -88,10 +89,9 @@ function parseSchemaRef(ref: string): string {
   return parts[3]
 }
 
-function normalizeProp(p: Property | XtpItemType, s: Schema) {
+function normalizeProp(p: Parameter | Property | XtpItemType, s: Schema) {
   p.$ref = s
   p.type = s.type || 'string' // TODO: revisit string default, isn't type required?
-  p.contentType = p.contentType || s.contentType
   p.description = p.description || s.description
 }
 

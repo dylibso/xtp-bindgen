@@ -29,9 +29,11 @@ const testSchema = {
     "referenceTypeFunc": {
       "description": "This demonstrates how you can accept or return references to schema types.\nAnd it shows how you can define an enum to be used as a property or input/output.\n",
       "input": {
+        "contentType": "application/json",
         "$ref": "#/components/schemas/Fruit"
       },
       "output": {
+        "contentType": "application/json",
         "$ref": "#/components/schemas/ComplexObject"
       }
     }
@@ -40,6 +42,7 @@ const testSchema = {
     "eatAFruit": {
       "description": "This is a host function. Right now host functions can only be the type (i64) -> i64.\nWe will support more in the future. Much of the same rules as exports apply.\n",
       "input": {
+        "contentType": "text/plain; charset=utf-8",
         "$ref": "#/components/schemas/Fruit"
       },
       "output": {
@@ -70,7 +73,6 @@ const testSchema = {
         ]
       },
       "ComplexObject": {
-        "contentType": "application/json",
         "description": "A complex json object",
         "properties": {
           "ghost": {
@@ -129,6 +131,5 @@ test('parse-v1-document', () => {
   const exp = doc.exports[2]
   // proves we derferenced it
   expect(exp.input?.$ref?.enum).toStrictEqual(testSchema.components.schemas['Fruit'].enum)
-  expect(exp.output?.$ref?.contentType).toBe('application/json')
   expect(exp.output?.contentType).toBe('application/json')
 })

@@ -36,8 +36,8 @@ export interface ComplexExport {
   name: string;
   description?: string;
   codeSamples?: CodeSample[];
-  input?: Property;
-  output?: Property;
+  input?: Parameter;
+  output?: Parameter;
 }
 
 export interface CodeSample {
@@ -52,7 +52,6 @@ export interface Schema {
   description: string;
   type?: XtpType;
   enum?: string[];
-  contentType?: MimeType;
   properties?: { [name: string]: Property };
 }
 
@@ -66,19 +65,20 @@ export interface XtpItemType {
   // NOTE: needs to be any to satisfy type satisfy
   // type system in normalizer
   "$ref"?: any;
-
-  contentType?: string;
   description?: string;
 
   // we only support one nested item type for now
   // type: XtpType | XtpItemType;
 }
 
+export interface Parameter extends Property {
+  contentType: MimeType;
+}
+
 export interface Property {
   type: XtpType;
   items?: XtpItemType;
   format?: XtpFormat;
-  contentType?: MimeType;
   description?: string;
   nullable?: boolean;
 
