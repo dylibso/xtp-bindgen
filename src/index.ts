@@ -97,7 +97,7 @@ function isJsonEncoded(p: Parameter | null): boolean {
 
 function isUtf8Encoded(p: Parameter | null): boolean {
   if (!p) return false
-  return p.contentType === 'text/plain; charset=UTF-8'
+  return p.contentType === 'text/plain; charset=utf-8'
 }
 
 function isPrimitive(p: Property): boolean {

@@ -4,7 +4,7 @@ export interface XtpItemType extends Omit<parser.XtpItemType, '$ref'> {
   '$ref': Schema | null;
 }
 
-export interface Property extends Omit<parser.Property, '$ref' | 'contentType'> {
+export interface Property extends Omit<parser.Property, '$ref'> {
   '$ref': Schema | null;
   nullable: boolean;
   items?: XtpItemType;
@@ -93,6 +93,10 @@ function normalizeProp(p: Parameter | Property | XtpItemType, s: Schema) {
   p.$ref = s
   p.type = s.type || 'string' // TODO: revisit string default, isn't type required?
   p.description = p.description || s.description
+  // double ensure that content types are lowercase
+  if ('contentType' in p) {
+    p.contentType = p.contentType.toLowerCase() as MimeType
+  }
 }
 
 function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {

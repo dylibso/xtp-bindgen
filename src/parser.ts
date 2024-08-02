@@ -46,7 +46,7 @@ export interface CodeSample {
   label?: string;
 }
 
-export type MimeType = 'application/json' | 'text/plain; charset=UTF-8' | 'application/x-binary'
+export type MimeType = 'application/json' | 'text/plain; charset=utf-8' | 'application/x-binary'
 
 export interface Schema {
   description: string;
