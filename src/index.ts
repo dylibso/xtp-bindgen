@@ -84,12 +84,6 @@ function formatCommentBlock(s: string | null, prefix?: string) {
   return s.trimEnd().replace(/\n/g, `\n${prefix}`);
 }
 
-
-function isDateTime(p: Property | null): boolean {
-  if (!p) return false
-  return p.type === 'string' && p.format === 'date-time'
-}
-
 function isJsonEncoded(p: Parameter | null): boolean {
   if (!p) return false
   return p.contentType === 'application/json'
@@ -100,9 +94,16 @@ function isUtf8Encoded(p: Parameter | null): boolean {
   return p.contentType === 'text/plain; charset=utf-8'
 }
 
-function isPrimitive(p: Property): boolean {
+function isPrimitive(p: Property | Parameter): boolean {
   if (!p.$ref) return true
-  return !!p.$ref.enum && !p.$ref.properties
+  // enums are currently primitive (strings)
+  // schemas with props are not (needs to be encoded)
+  return !!p.$ref.enum || !p.$ref.properties
+}
+
+function isDateTime(p: Property | Parameter | null): boolean {
+  if (!p) return false
+  return p.type === 'string' && p.format === 'date-time'
 }
 
 export const helpers = {
