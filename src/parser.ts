@@ -50,11 +50,12 @@ export type MimeType = 'application/json' | 'text/plain; charset=utf-8' | 'appli
 
 export interface Schema {
   description: string;
-  type?: XtpType;
+  type?: XtpSchemaType;
   enum?: string[];
   properties?: { [name: string]: Property };
 }
 
+export type XtpSchemaType = 'object' | 'enum'
 export type XtpType =
   'integer' | 'string' | 'number' | 'boolean' | 'object' | 'array' | 'buffer';
 export type XtpFormat =

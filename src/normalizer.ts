@@ -91,11 +91,17 @@ function parseSchemaRef(ref: string): string {
 
 function normalizeProp(p: Parameter | Property | XtpItemType, s: Schema) {
   p.$ref = s
-  p.type = s.type || 'string' // TODO: revisit string default, isn't type required?
   p.description = p.description || s.description
   // double ensure that content types are lowercase
   if ('contentType' in p) {
     p.contentType = p.contentType.toLowerCase() as MimeType
+  }
+  if (!p.type) p.type = 'string'
+  if (s.type) {
+    // if it's not an object assume it's a string
+    if (s.type === 'object') {
+      p.type = 'object'
+    }
   }
 }
 
