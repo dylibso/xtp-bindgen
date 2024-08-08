@@ -8,6 +8,7 @@ export interface Property extends Omit<parser.Property, '$ref'> {
   '$ref': Schema | null;
   nullable: boolean;
   items?: XtpItemType;
+  name: string;
 }
 
 export function isProperty(p: any): p is Property {
@@ -16,6 +17,7 @@ export function isProperty(p: any): p is Property {
 
 export interface Schema extends Omit<parser.Schema, 'properties'> {
   properties: Property[];
+  name: string;
 }
 
 export type SchemaMap = {
@@ -34,13 +36,14 @@ export type Version = 'v0' | 'v1';
 export type XtpType = parser.XtpType
 export type XtpFormat = parser.XtpFormat
 export type MimeType = parser.MimeType
+export type Parameter = parser.Parameter
 
 export interface Export {
   name: string;
   description?: string;
   codeSamples?: parser.CodeSample[];
-  input?: Property;
-  output?: Property;
+  input?: Parameter;
+  output?: Parameter;
 }
 
 export function isExport(e: any): e is Export {
@@ -81,15 +84,25 @@ function normalizeV0Schema(parsed: parser.V0Schema): XtpSchema {
 function parseSchemaRef(ref: string): string {
   const parts = ref.split('/')
   if (parts[0] !== '#') throw Error("Not a valid ref " + ref)
-  if (parts[1] !== 'schemas') throw Error("Not a valid ref " + ref)
-  return parts[2]
+  if (parts[1] !== 'components') throw Error("Not a valid ref " + ref)
+  if (parts[2] !== 'schemas') throw Error("Not a valid ref " + ref)
+  return parts[3]
 }
 
-function normalizeProp(p: Property | XtpItemType, s: Schema) {
+function normalizeProp(p: Parameter | Property | XtpItemType, s: Schema) {
   p.$ref = s
-  p.type = s.type || 'string' // TODO: revisit string default, isn't type required?
-  p.contentType = p.contentType || s.contentType
   p.description = p.description || s.description
+  // double ensure that content types are lowercase
+  if ('contentType' in p) {
+    p.contentType = p.contentType.toLowerCase() as MimeType
+  }
+  if (!p.type) p.type = 'string'
+  if (s.type) {
+    // if it's not an object assume it's a string
+    if (s.type === 'object') {
+      p.type = 'object'
+    }
+  }
 }
 
 function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
@@ -99,42 +112,63 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
   const schemas: SchemaMap = {}
 
   // need to index all the schemas first
-  parsed.schemas?.forEach(s => {
-    schemas[s.name] = s as Schema
-  })
+  for (const name in parsed.components?.schemas) {
+    const s = parsed.components.schemas[name]
+    const properties: Property[] = []
+    for (const pName in s.properties) {
+      const p = s.properties[pName] as Property
+      p.name = pName
+      properties.push(p)
+    }
+
+    // overwrite the name
+    // overwrite new properties shape
+    schemas[name] = {
+      ...s,
+      name,
+      properties,
+    }
+  }
 
   // denormalize all the properties in a second loop
-  parsed.schemas?.forEach(s => {
+  for (const name in schemas) {
+    const s = schemas[name]
+
     s.properties?.forEach((p, idx) => {
       // link the property with a reference to the schema if it has a ref
-      if (p.$ref) {
+      // need to get the ref from the parsed (raw) property
+      const rawProp = parsed.components!.schemas![name].properties![p.name]
+
+      if (rawProp.$ref) {
         normalizeProp(
-          schemas[s.name].properties[idx],
-          schemas[parseSchemaRef(p.$ref)]
+          schemas[name].properties[idx],
+          schemas[parseSchemaRef(rawProp.$ref)]
         )
       }
 
-      if (p.items?.$ref) {
+      if (rawProp.items?.$ref) {
         normalizeProp(
           //@ts-ignore
           p.items!,
-          schemas[parseSchemaRef(p.items!.$ref)]
+          schemas[parseSchemaRef(rawProp.items!.$ref)]
         )
       }
 
-      // add set nullable property from the required array
-      // TODO: consider supporting nullable instead of required
-      // @ts-ignore
-      p.nullable = !s.required?.includes(p.name)
+      // coerce to false by default
+      p.nullable = p.nullable || false
     })
-  })
+  }
 
   // denormalize all the exports
-  parsed.exports.forEach(ex => {
+  for (const name in parsed.exports) {
+    let ex = parsed.exports[name]
+
     if (parser.isComplexExport(ex)) {
       // they have the same type
       // deref input and output
       const normEx = ex as Export
+      normEx.name = name
+
       if (ex.input?.$ref) {
         normalizeProp(
           normEx.input!,
@@ -166,16 +200,20 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       exports.push(normEx)
     } else if (parser.isSimpleExport(ex)) {
       // it's just a name
-      exports.push({ name: ex })
+      exports.push({ name })
     } else {
       throw new NormalizerError("Unable to match export to a simple or a complex export")
     }
-  })
+  }
 
   // denormalize all the imports
-  parsed.imports?.forEach(im => {
+  for (const name in parsed.imports) {
+    const im = parsed.imports![name]
+
     // they have the same type
     const normIm = im as Import
+    normIm.name = name
+
     // deref input and output
     if (im.input?.$ref) {
       normalizeProp(
@@ -206,7 +244,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
     }
 
     imports.push(normIm)
-  })
+  }
 
   return {
     version,

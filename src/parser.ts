@@ -6,9 +6,11 @@ export interface V0Schema {
 
 export interface V1Schema {
   version: Version;
-  exports: Export[];
-  imports?: Import[];
-  schemas?: Schema[];
+  exports: { [name: string]: Export };
+  imports?: { [name: string]: Import };
+  components?: {
+    schemas?: { [name: string]: Schema };
+  }
 }
 
 type VUnknownSchema = V0Schema | V1Schema
@@ -21,7 +23,7 @@ export type Export = SimpleExport | ComplexExport;
 export type Import = ComplexExport
 
 export function isComplexExport(exportItem: Export): exportItem is ComplexExport {
-  return typeof exportItem === 'object' && 'name' in exportItem;
+  return typeof exportItem === 'object' && 'description' in exportItem;
 }
 
 export function isSimpleExport(exportItem: Export): exportItem is SimpleExport {
@@ -34,8 +36,8 @@ export interface ComplexExport {
   name: string;
   description?: string;
   codeSamples?: CodeSample[];
-  input?: Property;
-  output?: Property;
+  input?: Parameter;
+  output?: Parameter;
 }
 
 export interface CodeSample {
@@ -44,46 +46,42 @@ export interface CodeSample {
   label?: string;
 }
 
-export type MimeType = 'application/json' | 'text/plain; charset=UTF-8'
+export type MimeType = 'application/json' | 'text/plain; charset=utf-8' | 'application/x-binary'
 
 export interface Schema {
-  name: string;
   description: string;
-  type?: XtpType;
+  type?: XtpSchemaType;
   enum?: string[];
-  contentType?: MimeType;
-  required?: string[];
-  properties?: Property[];
+  properties?: { [name: string]: Property };
 }
 
+export type XtpSchemaType = 'object' | 'enum'
 export type XtpType =
   'integer' | 'string' | 'number' | 'boolean' | 'object' | 'array' | 'buffer';
 export type XtpFormat =
-  'int32' | 'int64' | 'float' | 'double' | 'date' | 'date-time' | 'byte';
+  'int32' | 'int64' | 'float' | 'double' | 'date-time' | 'byte';
 
 export interface XtpItemType {
   type: XtpType;
   // NOTE: needs to be any to satisfy type satisfy
   // type system in normalizer
   "$ref"?: any;
-
-  contentType?: string;
   description?: string;
 
   // we only support one nested item type for now
   // type: XtpType | XtpItemType;
 }
 
+export interface Parameter extends Property {
+  contentType: MimeType;
+}
+
 export interface Property {
-  name: string;
   type: XtpType;
   items?: XtpItemType;
   format?: XtpFormat;
-  contentType?: MimeType;
   description?: string;
-  minimum?: number;
-  maximum?: number;
-  default?: string;
+  nullable?: boolean;
 
   // NOTE: needs to be any to satisfy type satisfy
   // type system in normalizer
