@@ -54,8 +54,8 @@ export function isExport(e: any): e is Export {
 export type Import = Export
 
 class NormalizerError extends Error {
-  constructor(m: string) {
-    super(m);
+  constructor(m: string, public location: string) {
+    super(`${m} (at ${location})`);
     Object.setPrototypeOf(this, NormalizerError.prototype);
   }
 }
@@ -81,22 +81,24 @@ function normalizeV0Schema(parsed: parser.V0Schema): XtpSchema {
   }
 }
 
-function parseSchemaRef(ref: string): string {
+function parseSchemaRef(ref: string, location: string): string {
   const parts = ref.split('/')
-  if (parts[0] !== '#') throw Error("Not a valid ref " + ref)
-  if (parts[1] !== 'components') throw Error("Not a valid ref " + ref)
-  if (parts[2] !== 'schemas') throw Error("Not a valid ref " + ref)
+  if (parts[0] !== '#') throw new NormalizerError("Not a valid ref " + ref, location);
+  if (parts[1] !== 'components') throw new NormalizerError("Not a valid ref " + ref, location);
+  if (parts[2] !== 'schemas') throw new NormalizerError("Not a valid ref " + ref, location);
   return parts[3]
 }
 
-function normalizeProp(p: Parameter | Property | XtpItemType, s: Schema) {
+function normalizeProp(p: Parameter | Property | XtpItemType, s: Schema, location: string) {
   p.$ref = s
   p.description = p.description || s.description
   // double ensure that content types are lowercase
   if ('contentType' in p) {
     p.contentType = p.contentType.toLowerCase() as MimeType
   }
-  if (!p.type) p.type = 'string'
+  if (!p.type) {
+    p.type = 'string'
+  }
   if (s.type) {
     // if it's not an object assume it's a string
     if (s.type === 'object') {
@@ -138,11 +140,13 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       // link the property with a reference to the schema if it has a ref
       // need to get the ref from the parsed (raw) property
       const rawProp = parsed.components!.schemas![name].properties![p.name]
+      const propLocation = `#/components/schemas/${name}/properties/${p.name}`;
 
       if (rawProp.$ref) {
         normalizeProp(
           schemas[name].properties[idx],
-          schemas[parseSchemaRef(rawProp.$ref)]
+          schemas[parseSchemaRef(rawProp.$ref, propLocation)],
+          propLocation
         )
       }
 
@@ -150,7 +154,8 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
         normalizeProp(
           //@ts-ignore
           p.items!,
-          schemas[parseSchemaRef(rawProp.items!.$ref)]
+          schemas[parseSchemaRef(rawProp.items!.$ref, `${propLocation}/items`)],
+          `${propLocation}/items`
         )
       }
 
@@ -172,28 +177,32 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       if (ex.input?.$ref) {
         normalizeProp(
           normEx.input!,
-          schemas[parseSchemaRef(ex.input.$ref)]
+          schemas[parseSchemaRef(ex.input.$ref, `#/exports/${name}/input`)],
+          `#/exports/${name}/input`
         )
       }
       if (ex.input?.items?.$ref) {
         normalizeProp(
           //@ts-ignore
           normEx.input.items!,
-          schemas[parseSchemaRef(ex.input.items.$ref)]
+          schemas[parseSchemaRef(ex.input.items.$ref, `#/exports/${name}/input/items`)],
+          `#/exports/${name}/input/items`
         )
       }
 
       if (ex.output?.$ref) {
         normalizeProp(
           normEx.output!,
-          schemas[parseSchemaRef(ex.output.$ref)]
+          schemas[parseSchemaRef(ex.output.$ref, `#/exports/${name}/output`)],
+          `#/exports/${name}/output`
         )
       }
       if (ex.output?.items?.$ref) {
         normalizeProp(
           // @ts-ignore
           normEx.output.items!,
-          schemas[parseSchemaRef(ex.output.items.$ref)]
+          schemas[parseSchemaRef(ex.output.items.$ref, `#/exports/${name}/output/items`)],
+          `#/exports/${name}/output/items`
         )
       }
 
@@ -202,7 +211,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       // it's just a name
       exports.push({ name })
     } else {
-      throw new NormalizerError("Unable to match export to a simple or a complex export")
+      throw new NormalizerError("Unable to match export to a simple or a complex export", `#/exports/${name}`);
     }
   }
 
@@ -218,28 +227,32 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
     if (im.input?.$ref) {
       normalizeProp(
         normIm.input!,
-        schemas[parseSchemaRef(im.input.$ref)]
+        schemas[parseSchemaRef(im.input.$ref, `#/imports/${name}/input`)],
+        `#/imports/${name}/input`
       )
     }
     if (im.input?.items?.$ref) {
       normalizeProp(
         // @ts-ignore
         normIm.input.items!,
-        schemas[parseSchemaRef(im.input.items.$ref)]
+        schemas[parseSchemaRef(im.input.items.$ref, `#/imports/${name}/input/items`)],
+        `#/imports/${name}/input/items`
       )
     }
 
     if (im.output?.$ref) {
       normalizeProp(
         normIm.output!,
-        schemas[parseSchemaRef(im.output.$ref)]
+        schemas[parseSchemaRef(im.output.$ref, `#/imports/${name}/output`)],
+        `#/imports/${name}/output`
       )
     }
     if (im.output?.items?.$ref) {
       normalizeProp(
         // @ts-ignore
         normIm.output.items!,
-        schemas[parseSchemaRef(im.output.items.$ref)]
+        schemas[parseSchemaRef(im.output.items.$ref, `#/imports/${name}/output/items`)],
+        `#/imports/${name}/output/items`
       )
     }
 
@@ -262,7 +275,6 @@ export function parseAndNormalizeJson(encoded: string): XtpSchema {
   } else if (parser.isV1Schema(parsed)) {
     return normalizeV1Schema(parsed)
   } else {
-    throw new NormalizerError("Could not normalized unknown version of schema")
+    throw new NormalizerError("Could not normalize unknown version of schema", "#");
   }
 }
-
