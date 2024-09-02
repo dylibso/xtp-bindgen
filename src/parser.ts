@@ -63,6 +63,7 @@ export type XtpFormat =
 
 export interface XtpItemType {
   type: XtpType;
+  format?: XtpFormat;
   // NOTE: needs to be any to satisfy type satisfy
   // type system in normalizer
   "$ref"?: any;
@@ -89,8 +90,8 @@ export interface Property {
 }
 
 class ParseError extends Error {
-  constructor(m: string, public location: string) {
-    super(m);
+  constructor(public message: string, public path: string) {
+    super(message);
     Object.setPrototypeOf(this, ParseError.prototype);
   }
 }

@@ -54,8 +54,8 @@ export function isExport(e: any): e is Export {
 export type Import = Export
 
 class NormalizerError extends Error {
-  constructor(m: string, public location: string) {
-    super(`${m} (at ${location})`);
+  constructor(public message: string, public path: string) {
+    super(message);
     Object.setPrototypeOf(this, NormalizerError.prototype);
   }
 }
@@ -63,7 +63,6 @@ class NormalizerError extends Error {
 function normalizeV0Schema(parsed: parser.V0Schema): XtpSchema {
   const version = 'v0'
   const exports: Export[] = []
-  // we don't have any schemas or imports
   const imports: Import[] = []
   const schemas = {}
 
@@ -89,7 +88,7 @@ function parseSchemaRef(ref: string, location: string): string {
   return parts[3]
 }
 
-function normalizeProp(p: Parameter | Property | XtpItemType, s: Schema, location: string) {
+function normalizeProp(p: Parameter | Property | XtpItemType | parser.XtpItemType, s: Schema, location: string) {
   p.$ref = s
   p.description = p.description || s.description
   // double ensure that content types are lowercase
@@ -104,6 +103,38 @@ function normalizeProp(p: Parameter | Property | XtpItemType, s: Schema, locatio
     if (s.type === 'object') {
       p.type = 'object'
     }
+  }
+}
+
+function validateArrayItems(arrayItem: XtpItemType | parser.XtpItemType | undefined, location: string): void {
+  if (!arrayItem || !arrayItem.type) {
+    return;
+  }
+
+  validateTypeAndFormat(arrayItem.type, arrayItem.format, location);
+}
+
+function validateTypeAndFormat(type: XtpType, format: XtpFormat | undefined, location: string): void {
+  const validTypes = ['string', 'number', 'integer', 'boolean', 'object', 'array'];
+  if (!validTypes.includes(type)) {
+    throw new NormalizerError(`Invalid type ${type}`, location);
+  }
+
+  if (!format) {
+    return;
+  }
+
+  let validFormats: XtpFormat[] = [];
+  if (type === 'string') {
+    validFormats = ['date-time', 'byte'];
+  } else if (type === 'number') {
+    validFormats = ['float', 'double'];
+  } else if (type === 'integer') {
+    validFormats = ['int32', 'int64'];
+  }
+
+  if (!validFormats.includes(format)) {
+    throw new NormalizerError(`Invalid format ${format} for type ${type}. Valid formats are: ${validFormats.join(', ')}`, location);
   }
 }
 
@@ -152,25 +183,25 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       if (rawProp.items?.$ref) {
         normalizeProp(
-          //@ts-ignore
           p.items!,
           schemas[parseSchemaRef(rawProp.items!.$ref, `${propLocation}/items`)],
           `${propLocation}/items`
         )
       }
 
+      validateTypeAndFormat(p.type, p.format, propLocation);
+      validateArrayItems(p.items, `${propLocation}/items`);
+
       // coerce to false by default
       p.nullable = p.nullable || false
     })
   }
 
-  // denormalize all the exports
+  // Denormalize exports
   for (const name in parsed.exports) {
     let ex = parsed.exports[name]
 
     if (parser.isComplexExport(ex)) {
-      // they have the same type
-      // deref input and output
       const normEx = ex as Export
       normEx.name = name
 
@@ -183,8 +214,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       }
       if (ex.input?.items?.$ref) {
         normalizeProp(
-          //@ts-ignore
-          normEx.input.items!,
+          normEx.input!.items!,
           schemas[parseSchemaRef(ex.input.items.$ref, `#/exports/${name}/input/items`)],
           `#/exports/${name}/input/items`
         )
@@ -199,12 +229,14 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       }
       if (ex.output?.items?.$ref) {
         normalizeProp(
-          // @ts-ignore
-          normEx.output.items!,
+          normEx.output!.items!,
           schemas[parseSchemaRef(ex.output.items.$ref, `#/exports/${name}/output/items`)],
           `#/exports/${name}/output/items`
         )
       }
+
+      validateArrayItems(normEx.input?.items, `#/exports/${name}/input/items`);
+      validateArrayItems(normEx.output?.items, `#/exports/${name}/output/items`);
 
       exports.push(normEx)
     } else if (parser.isSimpleExport(ex)) {
@@ -233,8 +265,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
     }
     if (im.input?.items?.$ref) {
       normalizeProp(
-        // @ts-ignore
-        normIm.input.items!,
+        normIm.input!.items!,
         schemas[parseSchemaRef(im.input.items.$ref, `#/imports/${name}/input/items`)],
         `#/imports/${name}/input/items`
       )
@@ -249,12 +280,14 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
     }
     if (im.output?.items?.$ref) {
       normalizeProp(
-        // @ts-ignore
-        normIm.output.items!,
+        normIm.output!.items!,
         schemas[parseSchemaRef(im.output.items.$ref, `#/imports/${name}/output/items`)],
         `#/imports/${name}/output/items`
       )
     }
+
+    validateArrayItems(normIm.input?.items, `#/imports/${name}/input/items`);
+    validateArrayItems(normIm.output?.items, `#/imports/${name}/output/items`);
 
     imports.push(normIm)
   }
@@ -277,4 +310,37 @@ export function parseAndNormalizeJson(encoded: string): XtpSchema {
   } else {
     throw new NormalizerError("Could not normalize unknown version of schema", "#");
   }
+}
+
+function detectCircularReference(schema: Schema, visited: Set<Schema> = new Set()): NormalizerError | null {
+  if (visited.has(schema)) {
+    return new NormalizerError("Circular reference detected", `#/schemas/${schema.name}`);
+  }
+
+  visited.add(schema);
+
+  for (const property of schema.properties) {
+    if (property.$ref) {
+      const error = detectCircularReference(property.$ref, new Set(visited));
+      if (error) {
+        return error;
+      }
+    }
+  }
+
+  return null;
+}
+
+export function validateSchema(schema: XtpSchema): NormalizerError[] {
+  const errors: NormalizerError[] = [];
+
+  // Check for circular references
+  for (const schemaName in schema.schemas) {
+    const error = detectCircularReference(schema.schemas[schemaName]);
+    if (error) {
+      errors.push(error);
+    }
+  }
+
+  return errors;
 }
