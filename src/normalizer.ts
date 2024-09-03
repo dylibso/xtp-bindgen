@@ -204,7 +204,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
     })
   }
 
-  // Denormalize exports
+  // denormalize all the exports
   for (const name in parsed.exports) {
     let ex = parsed.exports[name]
 
@@ -315,6 +315,14 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
     imports.push(normIm)
   }
 
+  for (const name in schemas) {
+    const schema = schemas[name]
+    const error = detectCircularReference(schema);
+    if (error) {
+      throw error;
+    }
+  }
+
   return {
     version,
     exports,
@@ -335,12 +343,12 @@ export function parseAndNormalizeJson(encoded: string): XtpSchema {
   }
 }
 
-function detectCircularReference(schema: Schema, visited: Set<Schema> = new Set()): ValidationError | null {
-  if (visited.has(schema)) {
-    return new ValidationError("Circular reference detected", `#/schemas/${schema.name}`);
+function detectCircularReference(schema: Schema, visited: Set<string> = new Set()): ValidationError | null {
+  if (visited.has(schema.name)) {
+    return new ValidationError("Circular reference detected", `#/components/schemas/${schema.name}`);
   }
 
-  visited.add(schema);
+  visited.add(schema.name);
 
   for (const property of schema.properties) {
     if (property.$ref) {
@@ -352,18 +360,4 @@ function detectCircularReference(schema: Schema, visited: Set<Schema> = new Set(
   }
 
   return null;
-}
-
-export function validateSchema(schema: XtpSchema): ValidationError[] {
-  const errors: ValidationError[] = [];
-
-  // Check for circular references
-  for (const schemaName in schema.schemas) {
-    const error = detectCircularReference(schema.schemas[schemaName]);
-    if (error) {
-      errors.push(error);
-    }
-  }
-
-  return errors;
 }
