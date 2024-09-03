@@ -152,6 +152,10 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       const p = s.properties[pName] as Property
       p.name = pName
       properties.push(p)
+
+      if (p.items?.$ref) {
+        validateArrayItems(p.items, `#/components/schemas/${name}/properties/${pName}/items`);
+      }
     }
 
     // overwrite the name
