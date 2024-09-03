@@ -1,3 +1,4 @@
+import { ValidationError } from "./common";
 import * as parser from "./parser"
 
 export interface XtpItemType extends Omit<parser.XtpItemType, '$ref'> {
@@ -53,13 +54,6 @@ export function isExport(e: any): e is Export {
 // These are the same for now
 export type Import = Export
 
-class NormalizerError extends Error {
-  constructor(public message: string, public path: string) {
-    super(message);
-    Object.setPrototypeOf(this, NormalizerError.prototype);
-  }
-}
-
 function normalizeV0Schema(parsed: parser.V0Schema): XtpSchema {
   const version = 'v0'
   const exports: Export[] = []
@@ -82,9 +76,9 @@ function normalizeV0Schema(parsed: parser.V0Schema): XtpSchema {
 
 function parseSchemaRef(ref: string, location: string): string {
   const parts = ref.split('/')
-  if (parts[0] !== '#') throw new NormalizerError("Not a valid ref " + ref, location);
-  if (parts[1] !== 'components') throw new NormalizerError("Not a valid ref " + ref, location);
-  if (parts[2] !== 'schemas') throw new NormalizerError("Not a valid ref " + ref, location);
+  if (parts[0] !== '#') throw new ValidationError("Not a valid ref " + ref, location);
+  if (parts[1] !== 'components') throw new ValidationError("Not a valid ref " + ref, location);
+  if (parts[2] !== 'schemas') throw new ValidationError("Not a valid ref " + ref, location);
   return parts[3]
 }
 
@@ -117,7 +111,7 @@ function validateArrayItems(arrayItem: XtpItemType | parser.XtpItemType | undefi
 function validateTypeAndFormat(type: XtpType, format: XtpFormat | undefined, location: string): void {
   const validTypes = ['string', 'number', 'integer', 'boolean', 'object', 'array'];
   if (!validTypes.includes(type)) {
-    throw new NormalizerError(`Invalid type ${type}`, location);
+    throw new ValidationError(`Invalid type ${type}`, location);
   }
 
   if (!format) {
@@ -134,7 +128,7 @@ function validateTypeAndFormat(type: XtpType, format: XtpFormat | undefined, loc
   }
 
   if (!validFormats.includes(format)) {
-    throw new NormalizerError(`Invalid format ${format} for type ${type}. Valid formats are: ${validFormats.join(', ')}`, location);
+    throw new ValidationError(`Invalid format ${format} for type ${type}. Valid formats are: ${validFormats.join(', ')}`, location);
   }
 }
 
@@ -247,7 +241,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       // it's just a name
       exports.push({ name })
     } else {
-      throw new NormalizerError("Unable to match export to a simple or a complex export", `#/exports/${name}`);
+      throw new ValidationError("Unable to match export to a simple or a complex export", `#/exports/${name}`);
     }
   }
 
@@ -312,13 +306,13 @@ export function parseAndNormalizeJson(encoded: string): XtpSchema {
   } else if (parser.isV1Schema(parsed)) {
     return normalizeV1Schema(parsed)
   } else {
-    throw new NormalizerError("Could not normalize unknown version of schema", "#");
+    throw new ValidationError("Could not normalize unknown version of schema", "#");
   }
 }
 
-function detectCircularReference(schema: Schema, visited: Set<Schema> = new Set()): NormalizerError | null {
+function detectCircularReference(schema: Schema, visited: Set<Schema> = new Set()): ValidationError | null {
   if (visited.has(schema)) {
-    return new NormalizerError("Circular reference detected", `#/schemas/${schema.name}`);
+    return new ValidationError("Circular reference detected", `#/schemas/${schema.name}`);
   }
 
   visited.add(schema);
@@ -335,8 +329,8 @@ function detectCircularReference(schema: Schema, visited: Set<Schema> = new Set(
   return null;
 }
 
-export function validateSchema(schema: XtpSchema): NormalizerError[] {
-  const errors: NormalizerError[] = [];
+export function validateSchema(schema: XtpSchema): ValidationError[] {
+  const errors: ValidationError[] = [];
 
   // Check for circular references
   for (const schemaName in schema.schemas) {

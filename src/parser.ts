@@ -1,3 +1,5 @@
+import { ValidationError } from "./common";
+
 // Main Schema export interface
 export interface V0Schema {
   version: Version;
@@ -27,7 +29,7 @@ export function isComplexExport(exportItem: Export): exportItem is ComplexExport
 }
 
 export function isSimpleExport(exportItem: Export): exportItem is SimpleExport {
-  return typeof exportItem === 'string';
+  return typeof exportItem === 'object';
 }
 
 export type SimpleExport = string;
@@ -89,29 +91,22 @@ export interface Property {
   "$ref"?: any;
 }
 
-class ParseError extends Error {
-  constructor(public message: string, public path: string) {
-    super(message);
-    Object.setPrototypeOf(this, ParseError.prototype);
-  }
-}
-
 export function parseJson(encoded: string): VUnknownSchema {
   let parsed: any;
   try {
     parsed = JSON.parse(encoded);
   } catch (e) {
-    throw new ParseError("Invalid JSON", "#");
+    throw new ValidationError("Invalid JSON", "#");
   }
   
-  if (!parsed.version) throw new ParseError("version property missing", "#");
+  if (!parsed.version) throw new ValidationError("version property missing", "#");
   switch (parsed.version) {
     case 'v0':
       return parsed as V0Schema;
     case 'v1-draft':
       return parsed as V1Schema;
     default:
-      throw new ParseError(`version property not valid: ${parsed.version}`, "#/version");
+      throw new ValidationError(`version property not valid: ${parsed.version}`, "#/version");
   }
 }
 
