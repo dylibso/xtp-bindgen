@@ -3,9 +3,9 @@ import {
   Import,
   isExport,
   isProperty,
+  Parameter,
   parseAndNormalizeJson,
   Property,
-  Parameter,
   XtpSchema,
 } from "./normalizer";
 import { CodeSample } from "./parser";
@@ -55,7 +55,9 @@ function codeSamples(ex: Export, lang: string): CodeSample[] {
 }
 
 // template helpers
-function hasComment(p: Parameter | Property | Export | Import | null | undefined): boolean {
+function hasComment(
+  p: Parameter | Property | Export | Import | null | undefined,
+): boolean {
   if (!p) return false;
 
   if (isProperty(p)) {
@@ -85,25 +87,40 @@ function formatCommentBlock(s: string | null, prefix?: string) {
 }
 
 function isJsonEncoded(p: Parameter | null): boolean {
-  if (!p) return false
-  return p.contentType === 'application/json'
+  if (!p) return false;
+  return p.contentType === "application/json";
 }
 
 function isUtf8Encoded(p: Parameter | null): boolean {
-  if (!p) return false
-  return p.contentType === 'text/plain; charset=utf-8'
+  if (!p) return false;
+  return p.contentType === "text/plain; charset=utf-8";
 }
 
 function isPrimitive(p: Property | Parameter): boolean {
-  if (!p.$ref) return true
+  if (!p.$ref) return true;
   // enums are currently primitive (strings)
   // schemas with props are not (needs to be encoded)
-  return !!p.$ref.enum || !p.$ref.properties
+  return !!p.$ref.enum || !p.$ref.properties;
 }
 
 function isDateTime(p: Property | Parameter | null): boolean {
-  if (!p) return false
-  return p.type === 'string' && p.format === 'date-time'
+  if (!p) return false;
+  return p.type === "string" && p.format === "date-time";
+}
+
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function camelToSnakeCase(s: string) {
+  return s.split(/(?=[A-Z])/).join("_").toLowerCase();
+}
+
+function snakeToCamelCase(s: string) {
+  return s.split("_").map((part, index) => {
+    if (index === 0) return part;
+    return part.charAt(0).toUpperCase() + part.slice(1);
+  }).join("");
 }
 
 export const helpers = {
@@ -115,4 +132,7 @@ export const helpers = {
   isPrimitive,
   isJsonEncoded,
   isUtf8Encoded,
+  capitalize,
+  camelToSnakeCase,
+  snakeToCamelCase,
 };
