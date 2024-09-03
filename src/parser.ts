@@ -86,8 +86,7 @@ export interface Property {
   description?: string;
   nullable?: boolean;
 
-  // NOTE: needs to be any to satisfy type satisfy
-  // type system in normalizer
+  // NOTE: needs to be any to satisfy type safity in normalizer
   "$ref"?: any;
 }
 

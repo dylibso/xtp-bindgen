@@ -169,26 +169,37 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       // link the property with a reference to the schema if it has a ref
       // need to get the ref from the parsed (raw) property
       const rawProp = parsed.components!.schemas![name].properties![p.name]
-      const propLocation = `#/components/schemas/${name}/properties/${p.name}`;
+      const propPath = `#/components/schemas/${name}/properties/${p.name}`;
 
       if (rawProp.$ref) {
+        const schema = schemas[parseSchemaRef(rawProp.$ref, propPath)]
+        if (!schema) {
+          throw new ValidationError("invalid reference " + rawProp.$ref, propPath);
+        }
+
         normalizeProp(
           schemas[name].properties[idx],
-          schemas[parseSchemaRef(rawProp.$ref, propLocation)],
-          propLocation
+          schema,
+          propPath
         )
       }
 
       if (rawProp.items?.$ref) {
+        const path = `${propPath}/items`
+        const schema = schemas[parseSchemaRef(rawProp.items!.$ref, `${propPath}/items`)]
+        if (!schema) {
+          throw new ValidationError("invalid reference " + rawProp.items!.$ref, path);
+        }
+
         normalizeProp(
           p.items!,
-          schemas[parseSchemaRef(rawProp.items!.$ref, `${propLocation}/items`)],
-          `${propLocation}/items`
+          schema,
+          path
         )
       }
 
-      validateTypeAndFormat(p.type, p.format, propLocation);
-      validateArrayItems(p.items, `${propLocation}/items`);
+      validateTypeAndFormat(p.type, p.format, propPath);
+      validateArrayItems(p.items, `${propPath}/items`);
 
       // coerce to false by default
       p.nullable = p.nullable || false
@@ -204,32 +215,56 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       normEx.name = name
 
       if (ex.input?.$ref) {
+        const path = `#/exports/${name}/input`
+        const schema = schemas[parseSchemaRef(ex.input.$ref, path)]
+        if (!schema) {
+          throw new ValidationError("invalid reference " + ex.input.$ref, path);
+        }
+
         normalizeProp(
           normEx.input!,
-          schemas[parseSchemaRef(ex.input.$ref, `#/exports/${name}/input`)],
-          `#/exports/${name}/input`
+          schema,
+          path
         )
       }
       if (ex.input?.items?.$ref) {
+        const path = `#/exports/${name}/input/items`
+        const schema = schemas[parseSchemaRef(ex.input.items.$ref, path)]
+        if (!schema) {
+          throw new ValidationError("invalid reference " + ex.input.items.$ref, path);
+        }
+
         normalizeProp(
           normEx.input!.items!,
-          schemas[parseSchemaRef(ex.input.items.$ref, `#/exports/${name}/input/items`)],
-          `#/exports/${name}/input/items`
+          schema,
+          path
         )
       }
 
       if (ex.output?.$ref) {
+        const path = `#/exports/${name}/output`
+        const schema = schemas[parseSchemaRef(ex.output.$ref, path)]
+        if (!schema) {
+          throw new ValidationError("invalid reference " + ex.output.$ref, path);
+        }
+
         normalizeProp(
           normEx.output!,
-          schemas[parseSchemaRef(ex.output.$ref, `#/exports/${name}/output`)],
-          `#/exports/${name}/output`
+          schema,
+          path
         )
       }
       if (ex.output?.items?.$ref) {
+        const path = `#/exports/${name}/output/items`
+        const schema = schemas[parseSchemaRef(ex.output.items.$ref, path)]
+        if (!schema) {
+          throw new ValidationError("invalid reference " + ex.output.items.$ref, path);
+        }
+
         normalizeProp(
           normEx.output!.items!,
-          schemas[parseSchemaRef(ex.output.items.$ref, `#/exports/${name}/output/items`)],
-          `#/exports/${name}/output/items`
+          schema,
+          path
         )
       }
 
@@ -255,32 +290,56 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
     // deref input and output
     if (im.input?.$ref) {
+      const path = `#/imports/${name}/input`
+      const schema = schemas[parseSchemaRef(im.input.$ref, path)]
+      if (!schema) {
+        throw new ValidationError("invalid reference " + im.input.$ref, path);
+      }
+
       normalizeProp(
         normIm.input!,
-        schemas[parseSchemaRef(im.input.$ref, `#/imports/${name}/input`)],
-        `#/imports/${name}/input`
+        schema,
+        path
       )
     }
     if (im.input?.items?.$ref) {
+      const path = `#/imports/${name}/input/items`
+      const schema = schemas[parseSchemaRef(im.input.items.$ref, path)]
+      if (!schema) {
+        throw new ValidationError("invalid reference " + im.input.items.$ref, path);
+      }
+
       normalizeProp(
         normIm.input!.items!,
-        schemas[parseSchemaRef(im.input.items.$ref, `#/imports/${name}/input/items`)],
-        `#/imports/${name}/input/items`
+        schema,
+        path
       )
     }
 
     if (im.output?.$ref) {
+      const path = `#/imports/${name}/output`
+      const schema = schemas[parseSchemaRef(im.output.$ref, path)]
+      if (!schema) {
+        throw new ValidationError("invalid reference " + im.output.$ref, path);
+      }
+
       normalizeProp(
         normIm.output!,
-        schemas[parseSchemaRef(im.output.$ref, `#/imports/${name}/output`)],
-        `#/imports/${name}/output`
+        schema,
+        path
       )
     }
     if (im.output?.items?.$ref) {
+      const path = `#/imports/${name}/output/items`
+      const schema = schemas[parseSchemaRef(im.output.items.$ref, path)]
+      if (!schema) {
+        throw new ValidationError("invalid reference " + im.output.items.$ref, path);
+      }
+
       normalizeProp(
         normIm.output!.items!,
-        schemas[parseSchemaRef(im.output.items.$ref, `#/imports/${name}/output/items`)],
-        `#/imports/${name}/output/items`
+        schema,
+        path
       )
     }
 
