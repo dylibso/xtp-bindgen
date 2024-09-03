@@ -356,6 +356,11 @@ function detectCircularReference(schema: Schema, visited: Set<string> = new Set(
       if (error) {
         return error;
       }
+    } else if (property.items?.$ref) {
+      const error = detectCircularReference(property.items.$ref, new Set(visited));
+      if (error) {
+        return error;
+      }
     }
   }
 
