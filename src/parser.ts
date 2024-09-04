@@ -1,3 +1,5 @@
+import { ValidationError } from "./common";
+
 // Main Schema export interface
 export interface V0Schema {
   version: Version;
@@ -27,7 +29,7 @@ export function isComplexExport(exportItem: Export): exportItem is ComplexExport
 }
 
 export function isSimpleExport(exportItem: Export): exportItem is SimpleExport {
-  return typeof exportItem === 'string';
+  return typeof exportItem === 'object';
 }
 
 export type SimpleExport = string;
@@ -63,6 +65,7 @@ export type XtpFormat =
 
 export interface XtpItemType {
   type: XtpType;
+  format?: XtpFormat;
   // NOTE: needs to be any to satisfy type satisfy
   // type system in normalizer
   "$ref"?: any;
@@ -83,28 +86,26 @@ export interface Property {
   description?: string;
   nullable?: boolean;
 
-  // NOTE: needs to be any to satisfy type satisfy
-  // type system in normalizer
+  // NOTE: needs to be any to satisfy type safity in normalizer
   "$ref"?: any;
 }
 
-class ParseError extends Error {
-  constructor(m: string) {
-    super(m);
-    Object.setPrototypeOf(this, ParseError.prototype);
-  }
-}
-
 export function parseJson(encoded: string): VUnknownSchema {
-  let parsed = JSON.parse(encoded)
-  if (!parsed.version) throw new ParseError("version property missing")
+  let parsed: any;
+  try {
+    parsed = JSON.parse(encoded);
+  } catch (e) {
+    throw new ValidationError("Invalid JSON", "#");
+  }
+  
+  if (!parsed.version) throw new ValidationError("version property missing", "#");
   switch (parsed.version) {
     case 'v0':
-      return parsed as V0Schema
+      return parsed as V0Schema;
     case 'v1-draft':
-      return parsed as V1Schema
+      return parsed as V1Schema;
     default:
-      throw new ParseError(`version property not valid: ${parsed.version}`)
+      throw new ValidationError(`version property not valid: ${parsed.version}`, "#/version");
   }
 }
 
@@ -115,5 +116,3 @@ export function isV0Schema(schema: VUnknownSchema): schema is V0Schema {
 export function isV1Schema(schema: VUnknownSchema): schema is V1Schema {
   return schema.version === 'v1-draft';
 }
-
-

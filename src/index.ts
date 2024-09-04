@@ -10,6 +10,7 @@ import {
 } from "./normalizer";
 import { CodeSample } from "./parser";
 export * from "./normalizer";
+export { ValidationError } from "./common";
 
 export function parse(schema: string) {
   return parseAndNormalizeJson(schema);

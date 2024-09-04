@@ -1,3 +1,4 @@
+import { ValidationError } from "./common";
 import * as parser from "./parser"
 
 export interface XtpItemType extends Omit<parser.XtpItemType, '$ref'> {
@@ -53,17 +54,9 @@ export function isExport(e: any): e is Export {
 // These are the same for now
 export type Import = Export
 
-class NormalizerError extends Error {
-  constructor(m: string) {
-    super(m);
-    Object.setPrototypeOf(this, NormalizerError.prototype);
-  }
-}
-
 function normalizeV0Schema(parsed: parser.V0Schema): XtpSchema {
   const version = 'v0'
   const exports: Export[] = []
-  // we don't have any schemas or imports
   const imports: Import[] = []
   const schemas = {}
 
@@ -81,27 +74,68 @@ function normalizeV0Schema(parsed: parser.V0Schema): XtpSchema {
   }
 }
 
-function parseSchemaRef(ref: string): string {
+function querySchemaRef(schemas: { [key: string]: Schema }, ref: string, location: string): Schema {
   const parts = ref.split('/')
-  if (parts[0] !== '#') throw Error("Not a valid ref " + ref)
-  if (parts[1] !== 'components') throw Error("Not a valid ref " + ref)
-  if (parts[2] !== 'schemas') throw Error("Not a valid ref " + ref)
-  return parts[3]
+  if (parts[0] !== '#') throw new ValidationError("Not a valid ref " + ref, location);
+  if (parts[1] !== 'components') throw new ValidationError("Not a valid ref " + ref, location);
+  if (parts[2] !== 'schemas') throw new ValidationError("Not a valid ref " + ref, location);
+  const name = parts[3];
+
+  const s = schemas[name]
+  if (!s) {
+    const availableSchemas = Object.keys(schemas).join(', ')
+    throw new ValidationError(`invalid reference ${ref}. Cannot find schema ${name}. Options are: ${availableSchemas}`, location);
+  }
+  return s
 }
 
-function normalizeProp(p: Parameter | Property | XtpItemType, s: Schema) {
+function normalizeProp(p: Parameter | Property | XtpItemType | parser.XtpItemType, s: Schema, location: string) {
   p.$ref = s
   p.description = p.description || s.description
   // double ensure that content types are lowercase
   if ('contentType' in p) {
     p.contentType = p.contentType.toLowerCase() as MimeType
   }
-  if (!p.type) p.type = 'string'
+  if (!p.type) {
+    p.type = 'string'
+  }
   if (s.type) {
     // if it's not an object assume it's a string
     if (s.type === 'object') {
       p.type = 'object'
     }
+  }
+}
+
+function validateArrayItems(arrayItem: XtpItemType | parser.XtpItemType | undefined, location: string): void {
+  if (!arrayItem || !arrayItem.type) {
+    return;
+  }
+
+  validateTypeAndFormat(arrayItem.type, arrayItem.format, location);
+}
+
+function validateTypeAndFormat(type: XtpType, format: XtpFormat | undefined, location: string): void {
+  const validTypes = ['string', 'number', 'integer', 'boolean', 'object', 'array'];
+  if (!validTypes.includes(type)) {
+    throw new ValidationError(`Invalid type '${type}'. Options are: ${validTypes.map(t => `'${t}'`).join(', ')}`, location);
+  }
+
+  if (!format) {
+    return;
+  }
+
+  let validFormats: XtpFormat[] = [];
+  if (type === 'string') {
+    validFormats = ['date-time', 'byte'];
+  } else if (type === 'number') {
+    validFormats = ['float', 'double'];
+  } else if (type === 'integer') {
+    validFormats = ['int32', 'int64'];
+  }
+
+  if (!validFormats.includes(format)) {
+    throw new ValidationError(`Invalid format ${format} for type ${type}. Valid formats are: ${validFormats.join(', ')}`, location);
   }
 }
 
@@ -119,6 +153,10 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       const p = s.properties[pName] as Property
       p.name = pName
       properties.push(p)
+
+      if (p.items?.$ref) {
+        validateArrayItems(p.items, `#/components/schemas/${name}/properties/${pName}/items`);
+      }
     }
 
     // overwrite the name
@@ -138,21 +176,28 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       // link the property with a reference to the schema if it has a ref
       // need to get the ref from the parsed (raw) property
       const rawProp = parsed.components!.schemas![name].properties![p.name]
+      const propPath = `#/components/schemas/${name}/properties/${p.name}`;
 
       if (rawProp.$ref) {
         normalizeProp(
           schemas[name].properties[idx],
-          schemas[parseSchemaRef(rawProp.$ref)]
+          querySchemaRef(schemas, rawProp.$ref, propPath),
+          propPath
         )
       }
 
       if (rawProp.items?.$ref) {
+        const path = `${propPath}/items`
+
         normalizeProp(
-          //@ts-ignore
           p.items!,
-          schemas[parseSchemaRef(rawProp.items!.$ref)]
+          querySchemaRef(schemas, rawProp.items!.$ref, path),
+          path
         )
       }
+
+      validateTypeAndFormat(p.type, p.format, propPath);
+      validateArrayItems(p.items, `${propPath}/items`);
 
       // coerce to false by default
       p.nullable = p.nullable || false
@@ -164,45 +209,56 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
     let ex = parsed.exports[name]
 
     if (parser.isComplexExport(ex)) {
-      // they have the same type
-      // deref input and output
       const normEx = ex as Export
       normEx.name = name
 
       if (ex.input?.$ref) {
+        const path = `#/exports/${name}/input`
+
         normalizeProp(
           normEx.input!,
-          schemas[parseSchemaRef(ex.input.$ref)]
+          querySchemaRef(schemas, ex.input.$ref, path),
+          path
         )
       }
       if (ex.input?.items?.$ref) {
+        const path = `#/exports/${name}/input/items`
+
         normalizeProp(
-          //@ts-ignore
-          normEx.input.items!,
-          schemas[parseSchemaRef(ex.input.items.$ref)]
+          normEx.input!.items!,
+          querySchemaRef(schemas, ex.input.items.$ref, path),
+          path
         )
       }
 
       if (ex.output?.$ref) {
+        const path = `#/exports/${name}/output`
+
         normalizeProp(
           normEx.output!,
-          schemas[parseSchemaRef(ex.output.$ref)]
+          querySchemaRef(schemas, ex.output.$ref, path),
+          path
         )
       }
       if (ex.output?.items?.$ref) {
+        const path = `#/exports/${name}/output/items`
+
         normalizeProp(
-          // @ts-ignore
-          normEx.output.items!,
-          schemas[parseSchemaRef(ex.output.items.$ref)]
+          normEx.output!.items!,
+          querySchemaRef(schemas, ex.output.items.$ref, path),
+          path
         )
       }
+
+      validateArrayItems(normEx.input?.items, `#/exports/${name}/input/items`);
+      validateArrayItems(normEx.output?.items, `#/exports/${name}/output/items`);
 
       exports.push(normEx)
     } else if (parser.isSimpleExport(ex)) {
       // it's just a name
       exports.push({ name })
     } else {
-      throw new NormalizerError("Unable to match export to a simple or a complex export")
+      throw new ValidationError("Unable to match export to a simple or a complex export", `#/exports/${name}`);
     }
   }
 
@@ -216,34 +272,55 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
     // deref input and output
     if (im.input?.$ref) {
+      const path = `#/imports/${name}/input`
+
       normalizeProp(
         normIm.input!,
-        schemas[parseSchemaRef(im.input.$ref)]
+        querySchemaRef(schemas, im.input.$ref, path),
+        path
       )
     }
     if (im.input?.items?.$ref) {
+      const path = `#/imports/${name}/input/items`
+
       normalizeProp(
-        // @ts-ignore
-        normIm.input.items!,
-        schemas[parseSchemaRef(im.input.items.$ref)]
+        normIm.input!.items!,
+        querySchemaRef(schemas, im.input.items.$ref, path),
+        path
       )
     }
 
     if (im.output?.$ref) {
+      const path = `#/imports/${name}/output`
+
       normalizeProp(
         normIm.output!,
-        schemas[parseSchemaRef(im.output.$ref)]
+        querySchemaRef(schemas, im.output.$ref, path),
+        path
       )
     }
     if (im.output?.items?.$ref) {
+      const path = `#/imports/${name}/output/items`
+
       normalizeProp(
-        // @ts-ignore
-        normIm.output.items!,
-        schemas[parseSchemaRef(im.output.items.$ref)]
+        normIm.output!.items!,
+        querySchemaRef(schemas, im.output.items.$ref, path),
+        path
       )
     }
 
+    validateArrayItems(normIm.input?.items, `#/imports/${name}/input/items`);
+    validateArrayItems(normIm.output?.items, `#/imports/${name}/output/items`);
+
     imports.push(normIm)
+  }
+
+  for (const name in schemas) {
+    const schema = schemas[name]
+    const error = detectCircularReference(schema);
+    if (error) {
+      throw error;
+    }
   }
 
   return {
@@ -262,7 +339,30 @@ export function parseAndNormalizeJson(encoded: string): XtpSchema {
   } else if (parser.isV1Schema(parsed)) {
     return normalizeV1Schema(parsed)
   } else {
-    throw new NormalizerError("Could not normalized unknown version of schema")
+    throw new ValidationError("Could not normalize unknown version of schema", "#");
   }
 }
 
+function detectCircularReference(schema: Schema, visited: Set<string> = new Set()): ValidationError | null {
+  if (visited.has(schema.name)) {
+    return new ValidationError("Circular reference detected", `#/components/schemas/${schema.name}`);
+  }
+
+  visited.add(schema.name);
+
+  for (const property of schema.properties) {
+    if (property.$ref) {
+      const error = detectCircularReference(property.$ref, new Set(visited));
+      if (error) {
+        return error;
+      }
+    } else if (property.items?.$ref) {
+      const error = detectCircularReference(property.items.$ref, new Set(visited));
+      if (error) {
+        return error;
+      }
+    }
+  }
+
+  return null;
+}
