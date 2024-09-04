@@ -84,7 +84,7 @@ function querySchemaRef(schemas: { [key: string]: Schema }, ref: string, locatio
   const s = schemas[name]
   if (!s) {
     const availableSchemas = Object.keys(schemas).join(', ')
-    throw new ValidationError(`invalid reference ${ref}. Cannot find schema ${name}. Available schemas are: ${availableSchemas}`, location);
+    throw new ValidationError(`invalid reference ${ref}. Cannot find schema ${name}. Options are: ${availableSchemas}`, location);
   }
   return s
 }
