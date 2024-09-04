@@ -118,7 +118,7 @@ function validateArrayItems(arrayItem: XtpItemType | parser.XtpItemType | undefi
 function validateTypeAndFormat(type: XtpType, format: XtpFormat | undefined, location: string): void {
   const validTypes = ['string', 'number', 'integer', 'boolean', 'object', 'array'];
   if (!validTypes.includes(type)) {
-    throw new ValidationError(`Invalid type ${type}`, location);
+    throw new ValidationError(`Invalid type '${type}'. Options are: ${validTypes.map(t => `'${t}'`).join(', ')}`, location);
   }
 
   if (!format) {
