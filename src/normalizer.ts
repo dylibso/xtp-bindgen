@@ -47,6 +47,10 @@ export interface Export {
   output?: Parameter;
 }
 
+export function isExport(e: any): e is Export {
+  return !!e.name
+}
+
 // These are the same for now
 export type Import = Export
 
