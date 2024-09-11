@@ -48,7 +48,7 @@ export interface Export {
 }
 
 export function isExport(e: any): e is Export {
-  return parser.isSimpleExport(e) || parser.isComplexExport(e)
+  return !!e.name
 }
 
 // These are the same for now
@@ -208,58 +208,51 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
   for (const name in parsed.exports) {
     let ex = parsed.exports[name]
 
-    if (parser.isComplexExport(ex)) {
-      const normEx = ex as Export
-      normEx.name = name
+    const normEx = ex as Export
+    normEx.name = name
 
-      if (ex.input?.$ref) {
-        const path = `#/exports/${name}/input`
+    if (ex.input?.$ref) {
+      const path = `#/exports/${name}/input`
 
-        normalizeProp(
-          normEx.input!,
-          querySchemaRef(schemas, ex.input.$ref, path),
-          path
-        )
-      }
-      if (ex.input?.items?.$ref) {
-        const path = `#/exports/${name}/input/items`
-
-        normalizeProp(
-          normEx.input!.items!,
-          querySchemaRef(schemas, ex.input.items.$ref, path),
-          path
-        )
-      }
-
-      if (ex.output?.$ref) {
-        const path = `#/exports/${name}/output`
-
-        normalizeProp(
-          normEx.output!,
-          querySchemaRef(schemas, ex.output.$ref, path),
-          path
-        )
-      }
-      if (ex.output?.items?.$ref) {
-        const path = `#/exports/${name}/output/items`
-
-        normalizeProp(
-          normEx.output!.items!,
-          querySchemaRef(schemas, ex.output.items.$ref, path),
-          path
-        )
-      }
-
-      validateArrayItems(normEx.input?.items, `#/exports/${name}/input/items`);
-      validateArrayItems(normEx.output?.items, `#/exports/${name}/output/items`);
-
-      exports.push(normEx)
-    } else if (parser.isSimpleExport(ex)) {
-      // it's just a name
-      exports.push({ name })
-    } else {
-      throw new ValidationError("Unable to match export to a simple or a complex export", `#/exports/${name}`);
+      normalizeProp(
+        normEx.input!,
+        querySchemaRef(schemas, ex.input.$ref, path),
+        path
+      )
     }
+    if (ex.input?.items?.$ref) {
+      const path = `#/exports/${name}/input/items`
+
+      normalizeProp(
+        normEx.input!.items!,
+        querySchemaRef(schemas, ex.input.items.$ref, path),
+        path
+      )
+    }
+
+    if (ex.output?.$ref) {
+      const path = `#/exports/${name}/output`
+
+      normalizeProp(
+        normEx.output!,
+        querySchemaRef(schemas, ex.output.$ref, path),
+        path
+      )
+    }
+    if (ex.output?.items?.$ref) {
+      const path = `#/exports/${name}/output/items`
+
+      normalizeProp(
+        normEx.output!.items!,
+        querySchemaRef(schemas, ex.output.items.$ref, path),
+        path
+      )
+    }
+
+    validateArrayItems(normEx.input?.items, `#/exports/${name}/input/items`);
+    validateArrayItems(normEx.output?.items, `#/exports/${name}/output/items`);
+
+    exports.push(normEx)
   }
 
   // denormalize all the imports

@@ -19,22 +19,12 @@ type VUnknownSchema = V0Schema | V1Schema
 
 export type Version = 'v0' | 'v1-draft';
 
-export type Export = SimpleExport | ComplexExport;
-
 // for now, imports and exports look the same
-export type Import = ComplexExport
-
-export function isComplexExport(exportItem: Export): exportItem is ComplexExport {
-  return typeof exportItem === 'object' && 'description' in exportItem;
-}
-
-export function isSimpleExport(exportItem: Export): exportItem is SimpleExport {
-  return typeof exportItem === 'object';
-}
+export type Import = Export
 
 export type SimpleExport = string;
 
-export interface ComplexExport {
+export interface Export {
   name: string;
   description?: string;
   codeSamples?: CodeSample[];
