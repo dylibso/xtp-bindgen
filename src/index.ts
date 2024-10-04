@@ -124,6 +124,10 @@ function snakeToCamelCase(s: string) {
   }).join("");
 }
 
+function snakeToPascalCase(s: string) {
+  return capitalize(snakeToCamelCase(s));
+}
+
 export const helpers = {
   hasComment,
   formatCommentLine,
@@ -136,4 +140,5 @@ export const helpers = {
   capitalize,
   camelToSnakeCase,
   snakeToCamelCase,
+  snakeToPascalCase,
 };
