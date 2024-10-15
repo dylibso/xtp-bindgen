@@ -16,8 +16,9 @@ export function isProperty(p: any): p is Property {
   return !!p.type
 }
 
-export interface Schema extends Omit<parser.Schema, 'properties'> {
+export interface Schema extends Omit<parser.Schema, 'properties' | 'additionalProperties'> {
   properties: Property[];
+  additionalProperties?: Property;
   name: string;
 }
 
@@ -145,26 +146,53 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
   const imports: Import[] = []
   const schemas: SchemaMap = {}
 
-  // need to index all the schemas first
-  for (const name in parsed.components?.schemas) {
-    const s = parsed.components.schemas[name]
-    const properties: Property[] = []
-    for (const pName in s.properties) {
-      const p = s.properties[pName] as Property
-      p.name = pName
-      properties.push(p)
+  function normalizeMapSchema(s: parser.Schema, schemaName: string): Schema {
+    const normalizedSchema: Schema = {
+      ...s,
+      name: schemaName,
+      properties: [],
+      additionalProperties: undefined,
+    };
 
-      if (p.items?.$ref) {
-        validateArrayItems(p.items, `#/components/schemas/${name}/properties/${pName}/items`);
+    if (s.additionalProperties) {
+      if (s.additionalProperties.$ref) {
+        const refSchema = querySchemaRef(schemas, s.additionalProperties.$ref, `#/components/schemas/${schemaName}/additionalProperties`);
+
+        normalizedSchema.additionalProperties = s as Property;
+        normalizeProp(normalizedSchema.additionalProperties, refSchema, `#/components/schemas/${schemaName}/additionalProperties`);
+      } else {
+        normalizedSchema.additionalProperties = s.additionalProperties as Property;
       }
     }
 
-    // overwrite the name
-    // overwrite new properties shape
-    schemas[name] = {
-      ...s,
-      name,
-      properties,
+    return normalizedSchema;
+  }
+
+  // need to index all the schemas first
+  for (const name in parsed.components?.schemas) {
+    const s = parsed.components.schemas[name]
+    if (s.type === 'map') {
+      schemas[name] = normalizeMapSchema(s, name);
+    } else {
+      const properties: Property[] = []
+      for (const pName in s.properties) {
+        const p = s.properties[pName] as Property
+        p.name = pName
+        properties.push(p)
+
+        if (p.items?.$ref) {
+          validateArrayItems(p.items, `#/components/schemas/${name}/properties/${pName}/items`);
+        }
+      }
+
+      // overwrite the name
+      // overwrite new properties shape
+      schemas[name] = {
+        ...s,
+        name,
+        properties,
+        additionalProperties: undefined,
+      }
     }
   }
 

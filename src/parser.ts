@@ -45,9 +45,10 @@ export interface Schema {
   type?: XtpSchemaType;
   enum?: string[];
   properties?: { [name: string]: Property };
+  additionalProperties?: Property;
 }
 
-export type XtpSchemaType = 'object' | 'enum'
+export type XtpSchemaType = 'object' | 'enum' | 'map'
 export type XtpType =
   'integer' | 'string' | 'number' | 'boolean' | 'object' | 'array' | 'buffer';
 export type XtpFormat =
