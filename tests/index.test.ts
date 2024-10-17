@@ -99,28 +99,35 @@ const testSchema = {
             "nullable": true
           }
         }
-      }
+      },
+      "MapSchema": {
+          "additionalProperties": {
+              "type": "string"
+          }
+      },
     }
   }
 }
-
 
 test('parse-v1-document', () => {
   const doc = parse(JSON.stringify(testSchema))
 
   // check top level document is correct
   expect(doc.version).toBe('v1')
-  expect(Object.keys(doc.schemas).length).toBe(3)
+  expect(Object.keys(doc.schemas).length).toBe(4)
   expect(doc.exports.length).toBe(3)
   expect(doc.imports.length).toBe(1)
 
   const enumSchema1 = doc.schemas['Fruit']
+  expect(enumSchema1.type).toBe('enum')
   expect(enumSchema1.enum).toStrictEqual(testSchema.components.schemas['Fruit'].enum)
 
   const enumSchema2 = doc.schemas['GhostGang']
+  expect(enumSchema2.type).toBe('enum')
   expect(enumSchema2.enum).toStrictEqual(testSchema.components.schemas['GhostGang'].enum)
 
   const schema3 = doc.schemas['ComplexObject']
+  expect(schema3.type).toBe('object')
   const properties = schema3.properties
 
   // proves we derferenced it
@@ -128,8 +135,13 @@ test('parse-v1-document', () => {
   expect(properties[0].$ref?.name).toBe('GhostGang')
   expect(properties[0].name).toBe('ghost')
 
+  const mapSchema = doc.schemas['MapSchema']
+  expect(mapSchema.type).toBe('map')
+  expect(mapSchema.additionalProperties).toStrictEqual({ type: 'string' })
+
   const exp = doc.exports[2]
   // proves we derferenced it
   expect(exp.input?.$ref?.enum).toStrictEqual(testSchema.components.schemas['Fruit'].enum)
   expect(exp.output?.contentType).toBe('application/json')
 })
+3
