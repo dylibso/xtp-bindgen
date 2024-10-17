@@ -152,6 +152,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       name: schemaName,
       properties: [],
       additionalProperties: undefined,
+      type: 'map',
     };
 
     if (s.additionalProperties) {
@@ -171,8 +172,16 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
   // need to index all the schemas first
   for (const name in parsed.components?.schemas) {
     const s = parsed.components.schemas[name]
-    if (s.type === 'map') {
+    if (s.additionalProperties) {
       schemas[name] = normalizeMapSchema(s, name);
+    } else if (s.enum) {
+      schemas[name] = {
+        ...s,
+        name,
+        properties: [],
+        additionalProperties: undefined,
+        type: 'enum',
+      }
     } else {
       const properties: Property[] = []
       for (const pName in s.properties) {
@@ -192,6 +201,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
         name,
         properties,
         additionalProperties: undefined,
+        type: 'object',
       }
     }
   }
