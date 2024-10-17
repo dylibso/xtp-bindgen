@@ -33,7 +33,7 @@ xtp plugin init \
     --schema myschema.yaml \
     --template @dylibso/xtp-typescript-bindgen \
     --path ./myplugin \
-    --feature-flags none
+    --feature none
 ```
 
 You can point to a bindgen template on github or directly to a bindgen bundle.

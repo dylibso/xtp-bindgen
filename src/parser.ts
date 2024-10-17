@@ -46,6 +46,7 @@ export interface Schema {
   enum?: string[];
   properties?: { [name: string]: Property };
   additionalProperties?: Property;
+  required?: string[];
 }
 
 export type XtpSchemaType = 'object' | 'enum' | 'map'
@@ -88,7 +89,7 @@ export function parseJson(encoded: string): VUnknownSchema {
   } catch (e) {
     throw new ValidationError("Invalid JSON", "#");
   }
-  
+
   if (!parsed.version) throw new ValidationError("version property missing", "#");
   switch (parsed.version) {
     case 'v0':
