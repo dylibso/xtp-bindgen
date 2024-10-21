@@ -72,6 +72,21 @@ const testSchema = {
           "clyde"
         ]
       },
+      "EmbeddedObject": {
+        "description": "An object embedded in another object",
+        "properties": {
+          "aString": {
+            "type": "string",
+            "description": "A string prop"
+          },
+          "aMap": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "ComplexObject": {
         "description": "A complex json object",
         "properties": {
@@ -97,14 +112,55 @@ const testSchema = {
             "format": "date-time",
             "description": "A datetime object, we will automatically serialize and deserialize\nthis for you.",
             "nullable": true
+          },
+          "aMapOfMap": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/components/schemas/EmbeddedObject"
+              }
+            }
           }
         }
       },
       "MapSchema": {
-          "additionalProperties": {
-              "type": "string"
-          }
+        "description": "A map schema",
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
       },
+      "MapOfMapSchema": {
+        "description": "A map of map schema",
+        "type": "object",
+        "additionalProperties": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "MapOfArraySchema": {
+        "description": "A map of array schema",
+        "type": "object",
+        "additionalProperties": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "MapOfMapOfRefSchema": {
+        "description": "A map of map of ref schema",
+        "type": "object",
+        "additionalProperties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/components/schemas/EmbeddedObject"
+          }
+        }
+      }
     }
   }
 }
@@ -114,7 +170,7 @@ test('parse-v1-document', () => {
 
   // check top level document is correct
   expect(doc.version).toBe('v1')
-  expect(Object.keys(doc.schemas).length).toBe(4)
+  expect(Object.keys(doc.schemas).length).toBe(8)
   expect(doc.exports.length).toBe(3)
   expect(doc.imports.length).toBe(1)
 
@@ -135,9 +191,33 @@ test('parse-v1-document', () => {
   expect(properties[0].$ref?.name).toBe('GhostGang')
   expect(properties[0].name).toBe('ghost')
 
+  expect(properties[5].type).toBe('object')
+  expect(properties[5].additionalProperties!.type).toBe('object')
+  expect(properties[5].additionalProperties!.additionalProperties!.type).toBe('object')
+  expect(properties[5].additionalProperties!.additionalProperties!.$ref?.name).toBe('EmbeddedObject')
+  expect(properties[5].additionalProperties!.additionalProperties!.$ref?.properties[1].name).toBe('aMap')
+  expect(properties[5].additionalProperties!.additionalProperties!.$ref?.properties[1].additionalProperties!.type).toBe('string')
+
   const mapSchema = doc.schemas['MapSchema']
   expect(mapSchema.type).toBe('map')
   expect(mapSchema.additionalProperties).toStrictEqual({ type: 'string' })
+
+  const mapOfMapSchema = doc.schemas['MapOfMapSchema']
+  expect(mapOfMapSchema.type).toBe('map')
+  expect(mapOfMapSchema.additionalProperties!.type).toBe('object')
+  expect(mapOfMapSchema.additionalProperties!.additionalProperties!.type).toBe('string')
+
+  const mapOfArraySchema = doc.schemas['MapOfArraySchema']
+  expect(mapOfArraySchema.type).toBe('map')
+  expect(mapOfArraySchema.additionalProperties!.type).toBe('array')
+  expect(mapOfArraySchema.additionalProperties!.items!.type).toBe('string')
+
+  const mapOfMapOfRefSchema = doc.schemas['MapOfMapOfRefSchema']
+  expect(mapOfMapOfRefSchema.type).toBe('map')
+  expect(mapOfMapOfRefSchema.additionalProperties!.type).toBe('object')
+  expect(mapOfMapOfRefSchema.additionalProperties!.additionalProperties!.$ref?.name).toBe('EmbeddedObject')
+  expect(mapOfMapOfRefSchema.additionalProperties!.additionalProperties!.$ref?.properties[1].name).toBe('aMap')
+  expect(mapOfMapOfRefSchema.additionalProperties!.additionalProperties!.$ref?.properties[1].additionalProperties!.type).toBe('string')
 
   const exp = doc.exports[2]
   // proves we derferenced it

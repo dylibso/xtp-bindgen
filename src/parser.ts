@@ -76,6 +76,7 @@ export interface Property {
   format?: XtpFormat;
   description?: string;
   nullable?: boolean;
+  additionalProperties?: Property;
 
   // NOTE: needs to be any to satisfy type safity in normalizer
   "$ref"?: any;
