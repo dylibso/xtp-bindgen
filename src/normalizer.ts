@@ -5,18 +5,19 @@ export interface XtpItemType extends Omit<parser.XtpItemType, '$ref'> {
   '$ref': Schema | null;
 }
 
-export interface Property extends Omit<parser.Property, '$ref'> {
+export interface Property extends Omit<parser.Property, '$ref' | 'additionalProperties'> {
   '$ref': Schema | null;
   nullable: boolean;
   items?: XtpItemType;
   name: string;
+  additionalProperties?: Property;
 }
 
 export function isProperty(p: any): p is Property {
   return !!p.type
 }
 
-export interface Schema extends Omit<parser.Schema, 'properties' | 'additionalProperties'> {
+export interface Schema extends Omit<parser.Schema, 'properties'> {
   properties: Property[];
   additionalProperties?: Property;
   name: string;
@@ -140,40 +141,58 @@ function validateTypeAndFormat(type: XtpType, format: XtpFormat | undefined, loc
   }
 }
 
+function normalizeMapProperty(schemas: SchemaMap, p: parser.Property, relativePath: string) {
+  const path = `${relativePath}/additionalProperties`
+  if (p.additionalProperties?.$ref) {
+
+    normalizeProp(
+      p.additionalProperties!,
+      querySchemaRef(schemas, p.additionalProperties!.$ref, path),
+      path
+    )
+  } else if (p.additionalProperties?.additionalProperties) {
+    // recursive maps
+    normalizeMapProperty(schemas, p.additionalProperties, path);
+  }
+}
+
+function normalizeMapSchema(schemas: SchemaMap, s: parser.Schema, schemaName: string): Schema {
+  const normalizedSchema: Schema = {
+    ...s,
+    name: schemaName,
+    properties: [],
+    additionalProperties: undefined,
+    type: 'map',
+  };
+
+  if (s.additionalProperties) {
+      normalizedSchema.additionalProperties = s.additionalProperties as Property;
+      
+      const path = `#/components/schemas/${schemaName}/additionalProperties`;
+      if (s.additionalProperties.$ref) {
+        normalizeProp(normalizedSchema.additionalProperties, querySchemaRef(schemas, s.additionalProperties.$ref, path), path);
+      } else if (s.additionalProperties.additionalProperties) {
+        // recursive maps
+        normalizeMapProperty(schemas, normalizedSchema.additionalProperties, path);
+      }
+  }
+
+  return normalizedSchema;
+}
+
 function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
   const version = 'v1'
   const exports: Export[] = []
   const imports: Import[] = []
   const schemas: SchemaMap = {}
 
-  function normalizeMapSchema(s: parser.Schema, schemaName: string): Schema {
-    const normalizedSchema: Schema = {
-      ...s,
-      name: schemaName,
-      properties: [],
-      additionalProperties: undefined,
-      type: 'map',
-    };
-
-    if (s.additionalProperties) {
-      if (s.additionalProperties.$ref) {
-        const refSchema = querySchemaRef(schemas, s.additionalProperties.$ref, `#/components/schemas/${schemaName}/additionalProperties`);
-
-        normalizedSchema.additionalProperties = s as Property;
-        normalizeProp(normalizedSchema.additionalProperties, refSchema, `#/components/schemas/${schemaName}/additionalProperties`);
-      } else {
-        normalizedSchema.additionalProperties = s.additionalProperties as Property;
-      }
-    }
-
-    return normalizedSchema;
-  }
+  
 
   // need to index all the schemas first
   for (const name in parsed.components?.schemas) {
     const s = parsed.components.schemas[name]
     if (s.additionalProperties) {
-      schemas[name] = normalizeMapSchema(s, name);
+      schemas[name] = normalizeMapSchema(schemas, s, name);
     } else if (s.enum) {
       schemas[name] = {
         ...s,
@@ -233,6 +252,12 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
           path
         )
       }
+
+      normalizeMapProperty(
+        schemas,
+        rawProp,
+        propPath
+      )
 
       validateTypeAndFormat(p.type, p.format, propPath);
       validateArrayItems(p.items, `${propPath}/items`);
