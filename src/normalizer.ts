@@ -8,6 +8,7 @@ export interface XtpItemType extends Omit<parser.XtpItemType, '$ref'> {
 export interface Property extends Omit<parser.Property, '$ref'> {
   '$ref': Schema | null;
   nullable: boolean;
+  required: boolean;
   items?: XtpItemType;
   name: string;
 }
@@ -158,8 +159,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
     if (s.additionalProperties) {
       if (s.additionalProperties.$ref) {
         const refSchema = querySchemaRef(schemas, s.additionalProperties.$ref, `#/components/schemas/${schemaName}/additionalProperties`);
-
-        normalizedSchema.additionalProperties = s as Property;
+        normalizedSchema.additionalProperties = (s as unknown) as Property;
         normalizeProp(normalizedSchema.additionalProperties, refSchema, `#/components/schemas/${schemaName}/additionalProperties`);
       } else {
         normalizedSchema.additionalProperties = s.additionalProperties as Property;
@@ -237,8 +237,9 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       validateTypeAndFormat(p.type, p.format, propPath);
       validateArrayItems(p.items, `${propPath}/items`);
 
-      // coerce to false by default
+      // coerce to false by default for nullable and required
       p.nullable = p.nullable || false
+      p.required = !!s.required?.includes(p.name)
     })
   }
 
