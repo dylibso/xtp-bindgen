@@ -45,7 +45,7 @@ export interface Schema {
   type?: XtpSchemaType;
   enum?: string[];
   properties?: { [name: string]: Property };
-  additionalProperties?: Property;
+  additionalProperties?: AdditionalProperties;
 }
 
 export type XtpSchemaType = 'object' | 'enum' | 'map'
@@ -76,10 +76,14 @@ export interface Property {
   format?: XtpFormat;
   description?: string;
   nullable?: boolean;
-  additionalProperties?: Property;
+  additionalProperties?: AdditionalProperties;
 
   // NOTE: needs to be any to satisfy type safity in normalizer
   "$ref"?: any;
+}
+
+export interface AdditionalProperties extends Omit<Property, 'description' | 'additionalProperties'> {
+
 }
 
 export function parseJson(encoded: string): VUnknownSchema {

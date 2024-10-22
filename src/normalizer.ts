@@ -10,7 +10,11 @@ export interface Property extends Omit<parser.Property, '$ref' | 'additionalProp
   nullable: boolean;
   items?: XtpItemType;
   name: string;
-  additionalProperties?: Property;
+  additionalProperties?: AdditionalProperties;
+}
+
+export interface AdditionalProperties extends Omit<Property, 'description' | 'additionalProperties'> {
+
 }
 
 export function isProperty(p: any): p is Property {
@@ -39,7 +43,11 @@ export type Version = 'v0' | 'v1';
 export type XtpType = parser.XtpType
 export type XtpFormat = parser.XtpFormat
 export type MimeType = parser.MimeType
-export type Parameter = parser.Parameter
+
+export interface Parameter extends Omit<parser.Parameter, '$ref' | 'additionalProperties'> {
+  '$ref': Schema | null;
+  additionalProperties?: AdditionalProperties;
+}
 
 export interface Export {
   name: string;
@@ -91,7 +99,7 @@ function querySchemaRef(schemas: { [key: string]: Schema }, ref: string, locatio
   return s
 }
 
-function normalizeProp(p: Parameter | Property | XtpItemType | parser.XtpItemType, s: Schema, location: string) {
+function normalizeProp(p: Parameter | Property | XtpItemType | parser.XtpItemType, s: Schema) {
   p.$ref = s
   p.description = p.description || s.description
   // double ensure that content types are lowercase
@@ -144,15 +152,10 @@ function validateTypeAndFormat(type: XtpType, format: XtpFormat | undefined, loc
 function normalizeMapProperty(schemas: SchemaMap, p: parser.Property, relativePath: string) {
   const path = `${relativePath}/additionalProperties`
   if (p.additionalProperties?.$ref) {
-
     normalizeProp(
       p.additionalProperties!,
-      querySchemaRef(schemas, p.additionalProperties!.$ref, path),
-      path
+      querySchemaRef(schemas, p.additionalProperties!.$ref, path)
     )
-  } else if (p.additionalProperties?.additionalProperties) {
-    // recursive maps
-    normalizeMapProperty(schemas, p.additionalProperties, path);
   }
 }
 
@@ -170,10 +173,7 @@ function normalizeMapSchema(schemas: SchemaMap, s: parser.Schema, schemaName: st
       
       const path = `#/components/schemas/${schemaName}/additionalProperties`;
       if (s.additionalProperties.$ref) {
-        normalizeProp(normalizedSchema.additionalProperties, querySchemaRef(schemas, s.additionalProperties.$ref, path), path);
-      } else if (s.additionalProperties.additionalProperties) {
-        // recursive maps
-        normalizeMapProperty(schemas, normalizedSchema.additionalProperties, path);
+        normalizeProp(normalizedSchema.additionalProperties, querySchemaRef(schemas, s.additionalProperties.$ref, path));
       }
   }
 
@@ -185,8 +185,6 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
   const exports: Export[] = []
   const imports: Import[] = []
   const schemas: SchemaMap = {}
-
-  
 
   // need to index all the schemas first
   for (const name in parsed.components?.schemas) {
@@ -238,8 +236,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       if (rawProp.$ref) {
         normalizeProp(
           schemas[name].properties[idx],
-          querySchemaRef(schemas, rawProp.$ref, propPath),
-          propPath
+          querySchemaRef(schemas, rawProp.$ref, propPath)
         )
       }
 
@@ -248,8 +245,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
         normalizeProp(
           p.items!,
-          querySchemaRef(schemas, rawProp.items!.$ref, path),
-          path
+          querySchemaRef(schemas, rawProp.items!.$ref, path)
         )
       }
 
@@ -279,8 +275,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normEx.input!,
-        querySchemaRef(schemas, ex.input.$ref, path),
-        path
+        querySchemaRef(schemas, ex.input.$ref, path)
       )
     }
     if (ex.input?.items?.$ref) {
@@ -288,8 +283,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normEx.input!.items!,
-        querySchemaRef(schemas, ex.input.items.$ref, path),
-        path
+        querySchemaRef(schemas, ex.input.items.$ref, path)
       )
     }
 
@@ -298,8 +292,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normEx.output!,
-        querySchemaRef(schemas, ex.output.$ref, path),
-        path
+        querySchemaRef(schemas, ex.output.$ref, path)
       )
     }
     if (ex.output?.items?.$ref) {
@@ -307,8 +300,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normEx.output!.items!,
-        querySchemaRef(schemas, ex.output.items.$ref, path),
-        path
+        querySchemaRef(schemas, ex.output.items.$ref, path)
       )
     }
 
@@ -332,8 +324,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normIm.input!,
-        querySchemaRef(schemas, im.input.$ref, path),
-        path
+        querySchemaRef(schemas, im.input.$ref, path)
       )
     }
     if (im.input?.items?.$ref) {
@@ -341,8 +332,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normIm.input!.items!,
-        querySchemaRef(schemas, im.input.items.$ref, path),
-        path
+        querySchemaRef(schemas, im.input.items.$ref, path)
       )
     }
 
@@ -351,8 +341,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normIm.output!,
-        querySchemaRef(schemas, im.output.$ref, path),
-        path
+        querySchemaRef(schemas, im.output.$ref, path)
       )
     }
     if (im.output?.items?.$ref) {
@@ -360,8 +349,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normIm.output!.items!,
-        querySchemaRef(schemas, im.output.items.$ref, path),
-        path
+        querySchemaRef(schemas, im.output.items.$ref, path)
       )
     }
 

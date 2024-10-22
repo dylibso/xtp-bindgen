@@ -8,7 +8,7 @@ import {
   Property,
   XtpSchema,
 } from "./normalizer";
-import { CodeSample } from "./parser";
+import { CodeSample, Schema } from "./parser";
 export * from "./normalizer";
 export { ValidationError } from "./common";
 
@@ -104,6 +104,10 @@ function isPrimitive(p: Property | Parameter): boolean {
   return !!p.$ref.enum || !p.$ref.properties;
 }
 
+function isMap(p: Property | Parameter | Schema): boolean {
+  return !!p.additionalProperties;
+}
+
 function isDateTime(p: Property | Parameter | null): boolean {
   if (!p) return false;
   return p.type === "string" && p.format === "date-time";
@@ -135,6 +139,7 @@ export const helpers = {
   codeSamples,
   isDateTime,
   isPrimitive,
+  isMap,
   isJsonEncoded,
   isUtf8Encoded,
   capitalize,
