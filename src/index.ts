@@ -98,13 +98,15 @@ function isUtf8Encoded(p: Parameter | null): boolean {
 }
 
 function isPrimitive(p: Property | Parameter): boolean {
+  if (isMap(p)) return false;
+
   if (!p.$ref) return true;
   // enums are currently primitive (strings)
   // schemas with props are not (needs to be encoded)
   return !!p.$ref.enum || !p.$ref.properties;
 }
 
-function isMap(p: Property | Parameter | Schema): boolean {
+function isMap(p: Property | Parameter | Parameter): boolean {
   return !!p.additionalProperties;
 }
 

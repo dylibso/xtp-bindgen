@@ -23,7 +23,6 @@ export function isProperty(p: any): p is Property {
 
 export interface Schema extends Omit<parser.Schema, 'properties'> {
   properties: Property[];
-  additionalProperties?: Property;
   name: string;
 }
 
@@ -156,28 +155,18 @@ function normalizeMapProperty(schemas: SchemaMap, p: parser.Property, relativePa
       p.additionalProperties!,
       querySchemaRef(schemas, p.additionalProperties!.$ref, path)
     )
+
+    p.additionalProperties.type = 'object';
+  } else if (p.additionalProperties?.items) {
+    if (p.additionalProperties.items.$ref) {
+      normalizeProp(
+        p.additionalProperties.items,
+        querySchemaRef(schemas, p.additionalProperties.items.$ref, `${path}/items`)
+      )
+    }
+
+    p.additionalProperties.type = 'array';
   }
-}
-
-function normalizeMapSchema(schemas: SchemaMap, s: parser.Schema, schemaName: string): Schema {
-  const normalizedSchema: Schema = {
-    ...s,
-    name: schemaName,
-    properties: [],
-    additionalProperties: undefined,
-    type: 'map',
-  };
-
-  if (s.additionalProperties) {
-      normalizedSchema.additionalProperties = s.additionalProperties as Property;
-      
-      const path = `#/components/schemas/${schemaName}/additionalProperties`;
-      if (s.additionalProperties.$ref) {
-        normalizeProp(normalizedSchema.additionalProperties, querySchemaRef(schemas, s.additionalProperties.$ref, path));
-      }
-  }
-
-  return normalizedSchema;
 }
 
 function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
@@ -189,14 +178,11 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
   // need to index all the schemas first
   for (const name in parsed.components?.schemas) {
     const s = parsed.components.schemas[name]
-    if (s.additionalProperties) {
-      schemas[name] = normalizeMapSchema(schemas, s, name);
-    } else if (s.enum) {
+    if (s.enum) {
       schemas[name] = {
         ...s,
         name,
         properties: [],
-        additionalProperties: undefined,
         type: 'enum',
       }
     } else {
@@ -217,7 +203,6 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
         ...s,
         name,
         properties,
-        additionalProperties: undefined,
         type: 'object',
       }
     }
@@ -286,6 +271,9 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
         querySchemaRef(schemas, ex.input.items.$ref, path)
       )
     }
+    if (ex.input?.additionalProperties) {
+      normalizeMapProperty(schemas, ex.input, `#/exports/${name}/input`);
+    }
 
     if (ex.output?.$ref) {
       const path = `#/exports/${name}/output`
@@ -302,6 +290,9 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
         normEx.output!.items!,
         querySchemaRef(schemas, ex.output.items.$ref, path)
       )
+    }
+    if (ex.output?.additionalProperties) {
+      normalizeMapProperty(schemas, ex.output, `#/exports/${name}/output`);
     }
 
     validateArrayItems(normEx.input?.items, `#/exports/${name}/input/items`);
@@ -335,6 +326,9 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
         querySchemaRef(schemas, im.input.items.$ref, path)
       )
     }
+    if (im.input?.additionalProperties) {
+      normalizeMapProperty(schemas, im.input, `#/imports/${name}/input`);
+    }
 
     if (im.output?.$ref) {
       const path = `#/imports/${name}/output`
@@ -351,6 +345,9 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
         normIm.output!.items!,
         querySchemaRef(schemas, im.output.items.$ref, path)
       )
+    }
+    if (im.output?.additionalProperties) {
+      normalizeMapProperty(schemas, im.output, `#/imports/${name}/output`);
     }
 
     validateArrayItems(normIm.input?.items, `#/imports/${name}/input/items`);
