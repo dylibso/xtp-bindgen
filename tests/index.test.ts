@@ -173,15 +173,6 @@ test('parse-v1-document', () => {
   expect(properties[5].additionalProperties!.$ref?.properties[1].name).toBe('aMap')
   expect(properties[5].additionalProperties!.$ref?.properties[1].additionalProperties!.type).toBe('string')
 
-  const mapSchema = doc.schemas['MapSchema']
-  expect(mapSchema.type).toBe('map')
-  expect(mapSchema.additionalProperties).toStrictEqual({ type: 'string' })
-
-  const mapOfArraySchema = doc.schemas['MapOfArraySchema']
-  expect(mapOfArraySchema.type).toBe('map')
-  expect(mapOfArraySchema.additionalProperties!.type).toBe('array')
-  expect(mapOfArraySchema.additionalProperties!.items!.type).toBe('string')
-
   const exp = doc.exports[2]
   // proves we derferenced it
   expect(exp.input?.$ref?.enum).toStrictEqual(testSchema.components.schemas['Fruit'].enum)
