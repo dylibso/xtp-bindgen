@@ -72,6 +72,21 @@ const testSchema = {
           "clyde"
         ]
       },
+      "EmbeddedObject": {
+        "description": "An object embedded in another object",
+        "properties": {
+          "aString": {
+            "type": "string",
+            "description": "A string prop"
+          },
+          "aMap": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "ComplexObject": {
         "description": "A complex json object",
         "properties": {
@@ -97,13 +112,31 @@ const testSchema = {
             "format": "date-time",
             "description": "A datetime object, we will automatically serialize and deserialize\nthis for you.",
             "nullable": true
+          },
+          "aMapOfObject": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/EmbeddedObject"
+            }
           }
         }
       },
       "MapSchema": {
-          "additionalProperties": {
-              "type": "string"
+        "description": "A map schema",
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "MapOfArraySchema": {
+        "description": "A map of array schema",
+        "type": "object",
+        "additionalProperties": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
+        }
       },
     }
   }
@@ -114,7 +147,7 @@ test('parse-v1-document', () => {
 
   // check top level document is correct
   expect(doc.version).toBe('v1')
-  expect(Object.keys(doc.schemas).length).toBe(4)
+  expect(Object.keys(doc.schemas).length).toBe(6)
   expect(doc.exports.length).toBe(3)
   expect(doc.imports.length).toBe(1)
 
@@ -135,13 +168,120 @@ test('parse-v1-document', () => {
   expect(properties[0].$ref?.name).toBe('GhostGang')
   expect(properties[0].name).toBe('ghost')
 
-  const mapSchema = doc.schemas['MapSchema']
-  expect(mapSchema.type).toBe('map')
-  expect(mapSchema.additionalProperties).toStrictEqual({ type: 'string' })
+  expect(properties[5].type).toBe('object')
+  expect(properties[5].additionalProperties!.type).toBe('object')
+  expect(properties[5].additionalProperties!.$ref?.properties[1].name).toBe('aMap')
+  expect(properties[5].additionalProperties!.$ref?.properties[1].additionalProperties!.type).toBe('string')
 
   const exp = doc.exports[2]
   // proves we derferenced it
   expect(exp.input?.$ref?.enum).toStrictEqual(testSchema.components.schemas['Fruit'].enum)
   expect(exp.output?.contentType).toBe('application/json')
 })
-3
+
+test('validate schema name', () => {
+
+  const schema = {
+    version: "v1-draft",
+    exports: {
+      export1: {
+        input: {
+          contentType: "application/json",
+          type: "string"
+        }
+      }
+    },
+    components: {
+      schemas: {
+        "cool/schema": {
+          description: "hi",
+          properties: {
+            valid: {
+              type: "string"
+            }
+          }
+        }
+      }
+    }
+  };
+
+  expect(() => parse(JSON.stringify(schema))).toThrow(`Invalid schema name 'cool/schema'. Must be a valid identifier.`)
+})
+
+test('validate schema property name', () => {
+
+  const schema = {
+    version: "v1-draft",
+    exports: {
+      export1: {
+        input: {
+          contentType: "application/json",
+          type: "string"
+        }
+      }
+    },
+    components: {
+      schemas: {
+        "coolSchema": {
+          description: "hi",
+          properties: {
+            "invalid:name": {
+              type: "string"
+            }
+          }
+        }
+      }
+    }
+  };
+
+  expect(() => parse(JSON.stringify(schema))).toThrow(`Invalid property name 'invalid:name'. Must be a valid identifier.`)
+})
+
+test('validate enum value', () => {
+
+  const schema = {
+    version: "v1-draft",
+    components: {
+      schemas: {
+        "coolSchema": {
+          description: "hi",
+          enum: ["valid", "invalid:name"]
+        }
+      }
+    }
+  };
+
+  expect(() => parse(JSON.stringify(schema))).toThrow(`Invalid enum value 'invalid:name'. Must be a valid identifier.`)
+})
+
+test('validate export name', () => {
+  const schema = {
+    version: "v1-draft",
+    exports: {
+      "invalid:name": {
+        input: {
+          contentType: "application/json",
+          type: "string"
+        }
+      }
+    }
+  };
+
+  expect(() => parse(JSON.stringify(schema))).toThrow(`Invalid export name 'invalid:name'. Must be a valid identifier.`)
+})
+
+test('validate import name', () => {
+  const schema = {
+    version: "v1-draft",
+    imports: {
+      "invalid:name": {
+        input: {
+          contentType: "application/json",
+          type: "string"
+        }
+      }
+    }
+  };
+
+  expect(() => parse(JSON.stringify(schema))).toThrow(`Invalid import name 'invalid:name'. Must be a valid identifier.`)
+})

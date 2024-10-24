@@ -5,21 +5,25 @@ export interface XtpItemType extends Omit<parser.XtpItemType, '$ref'> {
   '$ref': Schema | null;
 }
 
-export interface Property extends Omit<parser.Property, '$ref'> {
+export interface Property extends Omit<parser.Property, '$ref' | 'additionalProperties'> {
   '$ref': Schema | null;
   nullable: boolean;
   required: boolean;
   items?: XtpItemType;
   name: string;
+  additionalProperties?: AdditionalProperties;
+}
+
+export interface AdditionalProperties extends Omit<Property, 'description' | 'additionalProperties'> {
+
 }
 
 export function isProperty(p: any): p is Property {
   return !!p.type
 }
 
-export interface Schema extends Omit<parser.Schema, 'properties' | 'additionalProperties'> {
+export interface Schema extends Omit<parser.Schema, 'properties'> {
   properties: Property[];
-  additionalProperties?: Property;
   name: string;
 }
 
@@ -39,7 +43,11 @@ export type Version = 'v0' | 'v1';
 export type XtpType = parser.XtpType
 export type XtpFormat = parser.XtpFormat
 export type MimeType = parser.MimeType
-export type Parameter = parser.Parameter
+
+export interface Parameter extends Omit<parser.Parameter, '$ref' | 'additionalProperties'> {
+  '$ref': Schema | null;
+  additionalProperties?: AdditionalProperties;
+}
 
 export interface Export {
   name: string;
@@ -62,7 +70,11 @@ function normalizeV0Schema(parsed: parser.V0Schema): XtpSchema {
   const imports: Import[] = []
   const schemas = {}
 
-  parsed.exports.forEach(ex => {
+  parsed.exports.forEach((ex, i) => {
+    if (!isValidIdentifier(ex)) {
+      throw new ValidationError(`Invalid export name '${ex}'. Must be a valid identifier.`, `#/exports/${i}`);
+    }
+
     exports.push({
       name: ex,
     })
@@ -91,7 +103,11 @@ function querySchemaRef(schemas: { [key: string]: Schema }, ref: string, locatio
   return s
 }
 
-function normalizeProp(p: Parameter | Property | XtpItemType | parser.XtpItemType, s: Schema, location: string) {
+function isValidIdentifier(name: string): boolean {
+  return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
+}
+
+function normalizeProp(p: Parameter | Property | XtpItemType | parser.XtpItemType, s: Schema) {
   p.$ref = s
   p.description = p.description || s.description
   // double ensure that content types are lowercase
@@ -141,50 +157,60 @@ function validateTypeAndFormat(type: XtpType, format: XtpFormat | undefined, loc
   }
 }
 
+function normalizeMapProperty(schemas: SchemaMap, p: parser.Property, relativePath: string) {
+  const path = `${relativePath}/additionalProperties`
+  if (p.additionalProperties?.$ref) {
+    normalizeProp(
+      p.additionalProperties!,
+      querySchemaRef(schemas, p.additionalProperties!.$ref, path)
+    )
+
+    p.additionalProperties.type = 'object';
+  } else if (p.additionalProperties?.items) {
+    if (p.additionalProperties.items.$ref) {
+      normalizeProp(
+        p.additionalProperties.items,
+        querySchemaRef(schemas, p.additionalProperties.items.$ref, `${path}/items`)
+      )
+    }
+
+    p.additionalProperties.type = 'array';
+  }
+}
+
 function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
   const version = 'v1'
   const exports: Export[] = []
   const imports: Import[] = []
   const schemas: SchemaMap = {}
 
-  function normalizeMapSchema(s: parser.Schema, schemaName: string): Schema {
-    const normalizedSchema: Schema = {
-      ...s,
-      name: schemaName,
-      properties: [],
-      additionalProperties: undefined,
-      type: 'map',
-    };
-
-    if (s.additionalProperties) {
-      if (s.additionalProperties.$ref) {
-        const refSchema = querySchemaRef(schemas, s.additionalProperties.$ref, `#/components/schemas/${schemaName}/additionalProperties`);
-        normalizedSchema.additionalProperties = (s as unknown) as Property;
-        normalizeProp(normalizedSchema.additionalProperties, refSchema, `#/components/schemas/${schemaName}/additionalProperties`);
-      } else {
-        normalizedSchema.additionalProperties = s.additionalProperties as Property;
-      }
-    }
-
-    return normalizedSchema;
-  }
-
   // need to index all the schemas first
   for (const name in parsed.components?.schemas) {
+    if (!isValidIdentifier(name)) {
+      throw new ValidationError(`Invalid schema name '${name}'. Must be a valid identifier.`, `#/components/schemas/${name}`);
+    }
+
     const s = parsed.components.schemas[name]
-    if (s.additionalProperties) {
-      schemas[name] = normalizeMapSchema(s, name);
-    } else if (s.enum) {
+    if (s.enum) {
+      for (const e of s.enum) {
+        if (!isValidIdentifier(e)) {
+          throw new ValidationError(`Invalid enum value '${e}'. Must be a valid identifier.`, `#/components/schemas/${name}/enum`);
+        }
+      }
+
       schemas[name] = {
         ...s,
         name,
         properties: [],
-        additionalProperties: undefined,
         type: 'enum',
       }
     } else {
       const properties: Property[] = []
       for (const pName in s.properties) {
+        if (!isValidIdentifier(pName)) {
+          throw new ValidationError(`Invalid property name '${pName}'. Must be a valid identifier.`, `#/components/schemas/${name}/properties/${pName}`);
+        }
+
         const p = s.properties[pName] as Property
         p.name = pName
         properties.push(p)
@@ -200,7 +226,6 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
         ...s,
         name,
         properties,
-        additionalProperties: undefined,
         type: 'object',
       }
     }
@@ -219,8 +244,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
       if (rawProp.$ref) {
         normalizeProp(
           schemas[name].properties[idx],
-          querySchemaRef(schemas, rawProp.$ref, propPath),
-          propPath
+          querySchemaRef(schemas, rawProp.$ref, propPath)
         )
       }
 
@@ -229,10 +253,15 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
         normalizeProp(
           p.items!,
-          querySchemaRef(schemas, rawProp.items!.$ref, path),
-          path
+          querySchemaRef(schemas, rawProp.items!.$ref, path)
         )
       }
+
+      normalizeMapProperty(
+        schemas,
+        rawProp,
+        propPath
+      )
 
       validateTypeAndFormat(p.type, p.format, propPath);
       validateArrayItems(p.items, `${propPath}/items`);
@@ -245,6 +274,10 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
   // denormalize all the exports
   for (const name in parsed.exports) {
+    if (!isValidIdentifier(name)) {
+      throw new ValidationError(`Invalid export name '${name}'. Must be a valid identifier.`, `#/exports/${name}`);
+    }
+
     let ex = parsed.exports[name]
 
     const normEx = ex as Export
@@ -255,8 +288,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normEx.input!,
-        querySchemaRef(schemas, ex.input.$ref, path),
-        path
+        querySchemaRef(schemas, ex.input.$ref, path)
       )
     }
     if (ex.input?.items?.$ref) {
@@ -264,9 +296,11 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normEx.input!.items!,
-        querySchemaRef(schemas, ex.input.items.$ref, path),
-        path
+        querySchemaRef(schemas, ex.input.items.$ref, path)
       )
+    }
+    if (ex.input?.additionalProperties) {
+      normalizeMapProperty(schemas, ex.input, `#/exports/${name}/input`);
     }
 
     if (ex.output?.$ref) {
@@ -274,8 +308,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normEx.output!,
-        querySchemaRef(schemas, ex.output.$ref, path),
-        path
+        querySchemaRef(schemas, ex.output.$ref, path)
       )
     }
     if (ex.output?.items?.$ref) {
@@ -283,9 +316,11 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normEx.output!.items!,
-        querySchemaRef(schemas, ex.output.items.$ref, path),
-        path
+        querySchemaRef(schemas, ex.output.items.$ref, path)
       )
+    }
+    if (ex.output?.additionalProperties) {
+      normalizeMapProperty(schemas, ex.output, `#/exports/${name}/output`);
     }
 
     validateArrayItems(normEx.input?.items, `#/exports/${name}/input/items`);
@@ -296,6 +331,10 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
   // denormalize all the imports
   for (const name in parsed.imports) {
+    if (!isValidIdentifier(name)) {
+      throw new ValidationError(`Invalid import name '${name}'. Must be a valid identifier.`, `#/imports/${name}`);
+    }
+
     const im = parsed.imports![name]
 
     // they have the same type
@@ -308,8 +347,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normIm.input!,
-        querySchemaRef(schemas, im.input.$ref, path),
-        path
+        querySchemaRef(schemas, im.input.$ref, path)
       )
     }
     if (im.input?.items?.$ref) {
@@ -317,9 +355,11 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normIm.input!.items!,
-        querySchemaRef(schemas, im.input.items.$ref, path),
-        path
+        querySchemaRef(schemas, im.input.items.$ref, path)
       )
+    }
+    if (im.input?.additionalProperties) {
+      normalizeMapProperty(schemas, im.input, `#/imports/${name}/input`);
     }
 
     if (im.output?.$ref) {
@@ -327,8 +367,7 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normIm.output!,
-        querySchemaRef(schemas, im.output.$ref, path),
-        path
+        querySchemaRef(schemas, im.output.$ref, path)
       )
     }
     if (im.output?.items?.$ref) {
@@ -336,9 +375,11 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
       normalizeProp(
         normIm.output!.items!,
-        querySchemaRef(schemas, im.output.items.$ref, path),
-        path
+        querySchemaRef(schemas, im.output.items.$ref, path)
       )
+    }
+    if (im.output?.additionalProperties) {
+      normalizeMapProperty(schemas, im.output, `#/imports/${name}/output`);
     }
 
     validateArrayItems(normIm.input?.items, `#/imports/${name}/input/items`);

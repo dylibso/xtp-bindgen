@@ -8,7 +8,7 @@ import {
   Property,
   XtpSchema,
 } from "./normalizer";
-import { CodeSample } from "./parser";
+import { CodeSample, Schema } from "./parser";
 export * from "./normalizer";
 export { ValidationError } from "./common";
 
@@ -98,10 +98,16 @@ function isUtf8Encoded(p: Parameter | null): boolean {
 }
 
 function isPrimitive(p: Property | Parameter): boolean {
+  if (isMap(p)) return false;
+
   if (!p.$ref) return true;
   // enums are currently primitive (strings)
   // schemas with props are not (needs to be encoded)
   return !!p.$ref.enum || !p.$ref.properties;
+}
+
+function isMap(p: Property | Parameter | Parameter): boolean {
+  return !!p.additionalProperties;
 }
 
 function isDateTime(p: Property | Parameter | null): boolean {
@@ -135,6 +141,7 @@ export const helpers = {
   codeSamples,
   isDateTime,
   isPrimitive,
+  isMap,
   isJsonEncoded,
   isUtf8Encoded,
   capitalize,

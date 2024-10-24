@@ -45,11 +45,10 @@ export interface Schema {
   type?: XtpSchemaType;
   enum?: string[];
   properties?: { [name: string]: Property };
-  additionalProperties?: Property;
   required?: string[];
 }
 
-export type XtpSchemaType = 'object' | 'enum' | 'map'
+export type XtpSchemaType = 'object' | 'enum'
 export type XtpType =
   'integer' | 'string' | 'number' | 'boolean' | 'object' | 'array' | 'buffer';
 export type XtpFormat =
@@ -62,6 +61,7 @@ export interface XtpItemType {
   // type system in normalizer
   "$ref"?: any;
   description?: string;
+  additionalProperties?: AdditionalProperties;
 
   // we only support one nested item type for now
   // type: XtpType | XtpItemType;
@@ -77,9 +77,15 @@ export interface Property {
   format?: XtpFormat;
   description?: string;
   nullable?: boolean;
+  additionalProperties?: AdditionalProperties;
 
   // NOTE: needs to be any to satisfy type safity in normalizer
   "$ref"?: any;
+}
+
+// we only support one level of nested map for now
+export interface AdditionalProperties extends Omit<Property, 'description' | 'additionalProperties'> {
+
 }
 
 export function parseJson(encoded: string): VUnknownSchema {
