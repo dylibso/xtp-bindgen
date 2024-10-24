@@ -178,4 +178,110 @@ test('parse-v1-document', () => {
   expect(exp.input?.$ref?.enum).toStrictEqual(testSchema.components.schemas['Fruit'].enum)
   expect(exp.output?.contentType).toBe('application/json')
 })
-3
+
+test('validate schema name', () => {
+
+  const schema = {
+    version: "v1-draft",
+    exports: {
+      export1: {
+        input: {
+          contentType: "application/json",
+          type: "string"
+        }
+      }
+    },
+    components: {
+      schemas: {
+        "cool/schema": {
+          description: "hi",
+          properties: {
+            valid: {
+              type: "string"
+            }
+          }
+        }
+      }
+    }
+  };
+
+  expect(() => parse(JSON.stringify(schema))).toThrow(`Invalid schema name 'cool/schema'. Must be a valid identifier.`)
+})
+
+test('validate schema property name', () => {
+
+  const schema = {
+    version: "v1-draft",
+    exports: {
+      export1: {
+        input: {
+          contentType: "application/json",
+          type: "string"
+        }
+      }
+    },
+    components: {
+      schemas: {
+        "coolSchema": {
+          description: "hi",
+          properties: {
+            "invalid:name": {
+              type: "string"
+            }
+          }
+        }
+      }
+    }
+  };
+
+  expect(() => parse(JSON.stringify(schema))).toThrow(`Invalid property name 'invalid:name'. Must be a valid identifier.`)
+})
+
+test('validate enum value', () => {
+
+  const schema = {
+    version: "v1-draft",
+    components: {
+      schemas: {
+        "coolSchema": {
+          description: "hi",
+          enum: ["valid", "invalid:name"]
+        }
+      }
+    }
+  };
+
+  expect(() => parse(JSON.stringify(schema))).toThrow(`Invalid enum value 'invalid:name'. Must be a valid identifier.`)
+})
+
+test('validate export name', () => {
+  const schema = {
+    version: "v1-draft",
+    exports: {
+      "invalid:name": {
+        input: {
+          contentType: "application/json",
+          type: "string"
+        }
+      }
+    }
+  };
+
+  expect(() => parse(JSON.stringify(schema))).toThrow(`Invalid export name 'invalid:name'. Must be a valid identifier.`)
+})
+
+test('validate import name', () => {
+  const schema = {
+    version: "v1-draft",
+    imports: {
+      "invalid:name": {
+        input: {
+          contentType: "application/json",
+          type: "string"
+        }
+      }
+    }
+  };
+
+  expect(() => parse(JSON.stringify(schema))).toThrow(`Invalid import name 'invalid:name'. Must be a valid identifier.`)
+})

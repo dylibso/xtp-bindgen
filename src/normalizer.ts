@@ -70,7 +70,11 @@ function normalizeV0Schema(parsed: parser.V0Schema): XtpSchema {
   const imports: Import[] = []
   const schemas = {}
 
-  parsed.exports.forEach(ex => {
+  parsed.exports.forEach((ex, i) => {
+    if (!isValidIdentifier(ex)) {
+      throw new ValidationError(`Invalid export name '${ex}'. Must be a valid identifier.`, `#/exports/${i}`);
+    }
+
     exports.push({
       name: ex,
     })
@@ -97,6 +101,10 @@ function querySchemaRef(schemas: { [key: string]: Schema }, ref: string, locatio
     throw new ValidationError(`invalid reference ${ref}. Cannot find schema ${name}. Options are: ${availableSchemas}`, location);
   }
   return s
+}
+
+function isValidIdentifier(name: string): boolean {
+  return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
 }
 
 function normalizeProp(p: Parameter | Property | XtpItemType | parser.XtpItemType, s: Schema) {
@@ -178,8 +186,18 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
   // need to index all the schemas first
   for (const name in parsed.components?.schemas) {
+    if (!isValidIdentifier(name)) {
+      throw new ValidationError(`Invalid schema name '${name}'. Must be a valid identifier.`, `#/components/schemas/${name}`);
+    }
+
     const s = parsed.components.schemas[name]
     if (s.enum) {
+      for (const e of s.enum) {
+        if (!isValidIdentifier(e)) {
+          throw new ValidationError(`Invalid enum value '${e}'. Must be a valid identifier.`, `#/components/schemas/${name}/enum`);
+        }
+      }
+
       schemas[name] = {
         ...s,
         name,
@@ -189,6 +207,10 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
     } else {
       const properties: Property[] = []
       for (const pName in s.properties) {
+        if (!isValidIdentifier(pName)) {
+          throw new ValidationError(`Invalid property name '${pName}'. Must be a valid identifier.`, `#/components/schemas/${name}/properties/${pName}`);
+        }
+
         const p = s.properties[pName] as Property
         p.name = pName
         properties.push(p)
@@ -252,6 +274,10 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
   // denormalize all the exports
   for (const name in parsed.exports) {
+    if (!isValidIdentifier(name)) {
+      throw new ValidationError(`Invalid export name '${name}'. Must be a valid identifier.`, `#/exports/${name}`);
+    }
+
     let ex = parsed.exports[name]
 
     const normEx = ex as Export
@@ -305,6 +331,10 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
 
   // denormalize all the imports
   for (const name in parsed.imports) {
+    if (!isValidIdentifier(name)) {
+      throw new ValidationError(`Invalid import name '${name}'. Must be a valid identifier.`, `#/imports/${name}`);
+    }
+
     const im = parsed.imports![name]
 
     // they have the same type
