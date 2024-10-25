@@ -18,7 +18,11 @@ bindgens you can use.
 
 * [TypeScript](https://github.com/dylibso/xtp-typescript-bindgen)
 * [Go](https://github.com/dylibso/xtp-go-bindgen)
+* [Python](https://github.com/dylibso/xtp-python-bindgen)
+* [Rust](https://github.com/dylibso/xtp-rust-bindgen)
 * [C#](https://github.com/dylibso/xtp-csharp-bindgen)
+* [Zig](https://github.com/dylibso/xtp-zig-bindgen)
+* [C++](https://github.com/dylibso/xtp-cpp-bindgen)
 
 ## How Do I Use A Bindgen?
 
