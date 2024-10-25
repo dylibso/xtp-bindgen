@@ -9,7 +9,9 @@ import {
   XtpSchema,
 } from "./normalizer";
 import { CodeSample } from "./parser";
+import { XtpNormalizedType } from "./types";
 export * from "./normalizer";
+export * from "./types";
 export { ValidationError } from "./common";
 
 export function parse(schema: string) {
@@ -104,9 +106,43 @@ function isPrimitive(p: Property | Parameter): boolean {
   return !!p.$ref.enum || !p.$ref.properties;
 }
 
-function isDateTime(p: Property | Parameter | null): boolean {
-  if (!p) return false;
-  return p.type === "string" && p.format === "date-time";
+export type XtpTyped = { xtpType: XtpNormalizedType } | null;
+
+function isDateTime(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === 'date-time'
+}
+function isBuffer(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "buffer"
+}
+function isObject(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "object"
+}
+function isArray(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "array"
+}
+function isEnum(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "enum"
+}
+function isString(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "string"
+}
+function isInt32(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "int32"
+}
+function isInt64(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "int64"
+}
+function isFloat(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "float"
+}
+function isDouble(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "double"
+}
+function isBoolean(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "boolean"
+}
+function isMap(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "map"
 }
 
 function capitalize(s: string) {
@@ -135,6 +171,17 @@ export const helpers = {
   codeSamples,
   isDateTime,
   isPrimitive,
+  isBuffer,
+  isObject,
+  isEnum,
+  isArray,
+  isString,
+  isInt32,
+  isInt64,
+  isFloat,
+  isDouble,
+  isMap,
+  isBoolean,
   isJsonEncoded,
   isUtf8Encoded,
   capitalize,

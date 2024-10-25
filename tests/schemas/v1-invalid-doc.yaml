@@ -1,0 +1,42 @@
+---
+version: v1-draft
+exports:
+  invalidFunc1:
+    description: Has some invalid parameters
+    input:
+      type: buffer
+      format: date-time
+    output:
+      type: string
+      format: float
+components:
+  schemas:
+    GhostGang:
+      description: a set of all the enemies of pac-man
+      enum:
+      - blinky
+      - pinky
+      - inky
+      - clyde
+    ComplexObject:
+      description: a complex json object
+      properties:
+        ghost:
+          "$ref": "#/components/schemas/GhostGang"
+          description: i can override the description for the property here
+        aBoolean:
+          type: boolean
+          format: date-time
+          description: a boolean prop
+        aString:
+          type: string
+          format: int32
+          description: an string prop
+        anInt:
+          type: integer
+          format: date-time
+          description: an int prop
+        aNonType:
+          type: non
+          description: an int prop
+

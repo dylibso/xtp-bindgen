@@ -15,7 +15,8 @@
     "allowSyntheticDefaultImports": true,
     "types": [
       "@extism/js-pdk",
-      "jest"
+      "jest",
+      "node"
     ]
   },
   "include": [

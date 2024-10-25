@@ -1,137 +1,60 @@
-import { parse } from '../src/index';
+import { parse, helpers, MapType, ArrayType } from '../src/index';
+const { isBoolean, isObject, isString, isEnum, isDateTime, isInt32, isMap } = helpers;
+import * as yaml from 'js-yaml'
+import * as fs from 'fs'
 
-const testSchema = {
-  "version": "v1-draft",
-  "exports": {
-    "voidFunc": {
-      "description": "This demonstrates how you can create an export with\nno inputs or outputs.\n"
-    },
-    "primitiveTypeFunc": {
-      "description": "This demonstrates how you can accept or return primtive types.\nThis function takes a utf8 string and returns a json encoded boolean\n",
-      "input": {
-        "type": "string",
-        "description": "A string passed into plugin input",
-        "contentType": "text/plain; charset=utf-8"
-      },
-      "output": {
-        "type": "boolean",
-        "description": "A boolean encoded as json",
-        "contentType": "application/json"
-      },
-      "codeSamples": [
-        {
-          "lang": "typescript",
-          "label": "Test if a string has more than one character.\nCode samples show up in documentation and inline in docstrings\n",
-          "source": "function primitiveTypeFunc(input: string): boolean {\n  return input.length > 1\n}\n"
-        }
-      ]
-    },
-    "referenceTypeFunc": {
-      "description": "This demonstrates how you can accept or return references to schema types.\nAnd it shows how you can define an enum to be used as a property or input/output.\n",
-      "input": {
-        "contentType": "application/json",
-        "$ref": "#/components/schemas/Fruit"
-      },
-      "output": {
-        "contentType": "application/json",
-        "$ref": "#/components/schemas/ComplexObject"
-      }
-    }
-  },
-  "imports": {
-    "eatAFruit": {
-      "description": "This is a host function. Right now host functions can only be the type (i64) -> i64.\nWe will support more in the future. Much of the same rules as exports apply.\n",
-      "input": {
-        "contentType": "text/plain; charset=utf-8",
-        "$ref": "#/components/schemas/Fruit"
-      },
-      "output": {
-        "type": "boolean",
-        "description": "boolean encoded as json",
-        "contentType": "application/json"
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "Fruit": {
-        "description": "A set of available fruits you can consume",
-        "enum": [
-          "apple",
-          "orange",
-          "banana",
-          "strawberry"
-        ]
-      },
-      "GhostGang": {
-        "description": "A set of all the enemies of pac-man",
-        "enum": [
-          "blinky",
-          "pinky",
-          "inky",
-          "clyde"
-        ]
-      },
-      "ComplexObject": {
-        "description": "A complex json object",
-        "properties": {
-          "ghost": {
-            "$ref": "#/components/schemas/GhostGang",
-            "description": "I can override the description for the property here"
-          },
-          "aBoolean": {
-            "type": "boolean",
-            "description": "A boolean prop"
-          },
-          "aString": {
-            "type": "string",
-            "description": "An string prop"
-          },
-          "anInt": {
-            "type": "integer",
-            "format": "int32",
-            "description": "An int prop"
-          },
-          "anOptionalDate": {
-            "type": "string",
-            "format": "date-time",
-            "description": "A datetime object, we will automatically serialize and deserialize\nthis for you.",
-            "nullable": true
-          }
-        }
-      },
-      "MapSchema": {
-          "additionalProperties": {
-              "type": "string"
-          }
-      },
-    }
-  }
-}
+const validV1Doc: any = yaml.load(fs.readFileSync('./tests/schemas/v1-valid-doc.yaml', 'utf8'))
 
 test('parse-v1-document', () => {
-  const doc = parse(JSON.stringify(testSchema))
+  const doc = parse(JSON.stringify(validV1Doc))
+
+  //console.log(JSON.stringify(doc, null, 4))
 
   // check top level document is correct
   expect(doc.version).toBe('v1')
-  expect(Object.keys(doc.schemas).length).toBe(4)
+  expect(Object.keys(doc.schemas).length).toBe(5)
   expect(doc.exports.length).toBe(3)
   expect(doc.imports.length).toBe(1)
 
   const enumSchema1 = doc.schemas['Fruit']
   expect(enumSchema1.type).toBe('enum')
-  expect(enumSchema1.enum).toStrictEqual(testSchema.components.schemas['Fruit'].enum)
+  expect(enumSchema1.enum).toStrictEqual(validV1Doc.components.schemas['Fruit'].enum)
+  expect(enumSchema1.xtpType.kind).toBe('enum')
 
   const enumSchema2 = doc.schemas['GhostGang']
   expect(enumSchema2.type).toBe('enum')
-  expect(enumSchema2.enum).toStrictEqual(testSchema.components.schemas['GhostGang'].enum)
+  expect(enumSchema2.enum).toStrictEqual(validV1Doc.components.schemas['GhostGang'].enum)
+  expect(enumSchema2.xtpType.kind).toBe('enum')
 
   const schema3 = doc.schemas['ComplexObject']
   expect(schema3.type).toBe('object')
+  expect(schema3.xtpType.kind).toBe('object')
   const properties = schema3.properties
 
+  expect(isObject(schema3)).toBe(true)
+  expect(isEnum(properties[0])).toBe(true)
+  expect(properties[0].required).toBe(true)
+  expect(isBoolean(properties[1])).toBe(true)
+  expect(properties[1].required).toBe(true)
+  expect(isString(properties[2])).toBe(true)
+  expect(properties[2].required).toBe(false)
+  expect(isInt32(properties[3])).toBe(true)
+  expect(isDateTime(properties[4])).toBe(true)
+  expect(isMap(properties[5])).toBe(true)
+  let mType = properties[5].xtpType as MapType
+  expect(mType.keyType.kind).toBe('string')
+  expect(mType.valueType.kind).toBe('string')
+  expect(isMap(properties[6])).toBe(true)
+  mType = properties[6].xtpType as MapType
+  expect(mType.keyType.kind).toBe('string')
+  expect(mType.valueType.kind).toBe('array')
+  let vType = mType.valueType as ArrayType
+  expect(vType.elementType.nullable).toBe(true)
+  expect(vType.elementType.kind).toBe('date-time')
+  expect(isInt32(properties[7])).toBe(true)
+
   // proves we derferenced it
-  expect(properties[0].$ref?.enum).toStrictEqual(testSchema.components.schemas['GhostGang'].enum)
+  expect(properties[0].$ref?.enum).toStrictEqual(validV1Doc.components.schemas['GhostGang'].enum)
   expect(properties[0].$ref?.name).toBe('GhostGang')
   expect(properties[0].name).toBe('ghost')
 
@@ -141,7 +64,10 @@ test('parse-v1-document', () => {
 
   const exp = doc.exports[2]
   // proves we derferenced it
-  expect(exp.input?.$ref?.enum).toStrictEqual(testSchema.components.schemas['Fruit'].enum)
+  expect(exp.input?.$ref?.enum).toStrictEqual(validV1Doc.components.schemas['Fruit'].enum)
   expect(exp.output?.contentType).toBe('application/json')
+
+
+
 })
-3
+
