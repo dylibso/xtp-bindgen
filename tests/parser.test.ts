@@ -17,6 +17,7 @@ test("parse-invalid-v1-document", () => {
   expect(errors).toBeInstanceOf(Array)
 
   const paths = errors!.map(e => e.path)
+  //console.log(JSON.stringify(errors!, null, 4))
   expect(paths).toStrictEqual([
     "#/exports/invalidFunc1/input",
     "#/exports/invalidFunc1/output",
@@ -27,6 +28,7 @@ test("parse-invalid-v1-document", () => {
     "#/components/schemas/ComplexObject/properties/aMapOfMapsOfNullableDateArrays/additionalProperties",
     "#/components/schemas/ComplexObject/properties/aMapOfMapsOfNullableDateArrays/additionalProperties",
     "#/components/schemas/ComplexObject/properties/aMapOfMapsOfNullableDateArrays/additionalProperties/additionalProperties",
+    "#/components/schemas/ComplexObject/properties/anArrayOfMaps/items",
   ])
 })
 

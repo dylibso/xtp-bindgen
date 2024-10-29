@@ -47,4 +47,10 @@ components:
                 nullable: true
                 type: string
                 format: date-time
+        anArrayOfMaps:
+          description: an illegal array of maps
+          items:
+            additionalProperties:
+              type: string
+              format: date-time
 
