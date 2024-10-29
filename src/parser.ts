@@ -121,36 +121,8 @@ class V1Validator {
       }
     }
 
-
-    if (prop.items) {
-      this.validateTypedInterface(prop.items)
-
-      // here we are adding some extra constraints on the value type
-      // we can relax these later when we can ensure we can cast these properly
-      this.location.push('items')
-      if (prop.items.items) {
-        this.recordError("Arrays are currently not supported as element types of arrays")
-      }
-      if (prop.items.additionalProperties) {
-        this.recordError("Maps are currently not supported as element types of arrays")
-      }
-      this.location.pop()
-    }
-
-    if (prop.additionalProperties) {
-      this.validateTypedInterface(prop.additionalProperties)
-
-      // here we are adding some extra constraints on the value type
-      // we can relax these later when we can ensure we can cast these properly
-      this.location.push('additionalProperties')
-      if (prop.additionalProperties.items) {
-        this.recordError("Arrays are currently not supported as value types of maps")
-      }
-      if (prop.additionalProperties.additionalProperties) {
-        this.recordError("Maps are currently not supported as value types of maps")
-      }
-      this.location.pop()
-    }
+    if (prop.items) this.validateTypedInterface(prop.items)
+    if (prop.additionalProperties) this.validateTypedInterface(prop.additionalProperties)
   }
 
   getLocation(): string {

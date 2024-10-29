@@ -8,7 +8,7 @@ const validV1Doc: any = yaml.load(fs.readFileSync('./tests/schemas/v1-valid-doc.
 test('parse-v1-document', () => {
   const doc = parse(JSON.stringify(validV1Doc))
 
-  //console.log(JSON.stringify(doc, null, 4))
+  console.log(JSON.stringify(doc, null, 4))
 
   // check top level document is correct
   expect(doc.version).toBe('v1')
