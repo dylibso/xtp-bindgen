@@ -39,4 +39,12 @@ components:
         aNonType:
           type: non
           description: an int prop
+        aMapOfMapsOfNullableDateArrays:
+          description: a weird map, it's too deep to cast correctly right now
+          additionalProperties:
+            additionalProperties:
+              items:
+                nullable: true
+                type: string
+                format: date-time
 

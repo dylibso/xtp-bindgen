@@ -24,6 +24,9 @@ test("parse-invalid-v1-document", () => {
     "#/components/schemas/ComplexObject/properties/aString",
     "#/components/schemas/ComplexObject/properties/anInt",
     "#/components/schemas/ComplexObject/properties/aNonType",
+    "#/components/schemas/ComplexObject/properties/aMapOfMapsOfNullableDateArrays/additionalProperties",
+    "#/components/schemas/ComplexObject/properties/aMapOfMapsOfNullableDateArrays/additionalProperties",
+    "#/components/schemas/ComplexObject/properties/aMapOfMapsOfNullableDateArrays/additionalProperties/additionalProperties",
   ])
 })
 

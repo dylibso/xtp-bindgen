@@ -69,6 +69,7 @@ class V1Validator {
    */
   validateNode(node: any) {
     this.validateTypedInterface(node)
+
     if (node && typeof node === 'object') {
       // i don't think we need to validate array children
       if (Array.isArray(node)) return
@@ -98,32 +99,46 @@ class V1Validator {
    * catch in JSON Schema validation.
    */
   validateTypedInterface(prop?: XtpTyped): void {
-    if (!prop || !prop.type) return
+    if (!prop) return
 
     const validTypes = ['string', 'number', 'integer', 'boolean', 'object', 'array', 'buffer'];
-    if (!validTypes.includes(prop.type)) {
+    if (prop.type && !validTypes.includes(prop.type)) {
       this.recordError(`Invalid type '${prop.type}'. Options are: ${validTypes.map(t => `'${t}'`).join(', ')}`)
     }
 
-    if (!prop.format) {
-      return;
+    if (prop.format) {
+      let validFormats: XtpFormat[] = [];
+      if (prop.type === 'string') {
+        validFormats = ['date-time', 'byte'];
+      } else if (prop.type === 'number') {
+        validFormats = ['float', 'double'];
+      } else if (prop.type === 'integer') {
+        validFormats = ['int32', 'int64'];
+      }
+
+      if (!validFormats.includes(prop.format)) {
+        this.recordError(`Invalid format ${prop.format} for type ${prop.type}. Valid formats are: ${validFormats.join(', ')}`)
+      }
     }
 
-    let validFormats: XtpFormat[] = [];
-    if (prop.type === 'string') {
-      validFormats = ['date-time', 'byte'];
-    } else if (prop.type === 'number') {
-      validFormats = ['float', 'double'];
-    } else if (prop.type === 'integer') {
-      validFormats = ['int32', 'int64'];
-    }
-
-    if (!validFormats.includes(prop.format)) {
-      this.recordError(`Invalid format ${prop.format} for type ${prop.type}. Valid formats are: ${validFormats.join(', ')}`)
-    }
 
     if (prop.items) this.validateTypedInterface(prop.items)
-    if (prop.additionalProperties) this.validateTypedInterface(prop.additionalProperties)
+
+    if (prop.additionalProperties) {
+      this.validateTypedInterface(prop.additionalProperties)
+
+      // here we are adding some extra constraints on the value type
+      // we can relax these later when we can ensure we can cast these properly
+      this.location.push('additionalProperties')
+      if (prop.additionalProperties.items) {
+        this.recordError("Arrays are currently not supported for value types of maps")
+      }
+      if (prop.additionalProperties.additionalProperties) {
+        this.recordError("Maps are currently not supported for value types of maps")
+      }
+
+      this.location.pop()
+    }
   }
 
   getLocation(): string {
@@ -146,9 +161,6 @@ export interface V1Schema {
     schemas?: { [name: string]: Schema };
   }
 }
-
-// These are the only types we're interested in discriminating
-export type NodeKind = 'schema' | 'property' | 'parameter' | 'import' | 'export'
 
 type VUnknownSchema = V0Schema | V1Schema
 

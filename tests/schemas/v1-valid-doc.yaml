@@ -94,24 +94,9 @@ components:
           description: a string map
           additionalProperties:
             type: string
-        aMapOfNullableDateArrays:
-          description: a string map
-          additionalProperties:
-            items:
-              nullable: true
-              type: string
-              format: date-time
         anIntRef:
           description: a ref to an int which is weird but whatever!
           $ref: "#/components/schemas/MyInt"
-        aMapOfMapsOfNullableDateArrays:
-          description: a weird map
-          additionalProperties:
-            additionalProperties:
-              items:
-                nullable: true
-                type: string
-                format: date-time
     MyInt:
       description: an int as a schema
       type: integer

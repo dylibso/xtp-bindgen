@@ -106,7 +106,7 @@ function isPrimitive(p: Property | Parameter): boolean {
   return !!p.$ref.enum || !p.$ref.properties;
 }
 
-export type XtpTyped = { xtpType: XtpNormalizedType } | null;
+export type XtpTyped = { xtpType: XtpNormalizedType };
 
 function isDateTime(p: XtpTyped): boolean {
   return p?.xtpType?.kind === 'date-time'

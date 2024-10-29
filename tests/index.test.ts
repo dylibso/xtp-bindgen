@@ -39,19 +39,16 @@ test('parse-v1-document', () => {
   expect(isString(properties[2])).toBe(true)
   expect(properties[2].required).toBe(false)
   expect(isInt32(properties[3])).toBe(true)
+  expect(properties[3].required).toBe(false)
   expect(isDateTime(properties[4])).toBe(true)
+  expect(properties[4].required).toBe(false)
   expect(isMap(properties[5])).toBe(true)
+  expect(properties[5].required).toBe(false)
   let mType = properties[5].xtpType as MapType
   expect(mType.keyType.kind).toBe('string')
   expect(mType.valueType.kind).toBe('string')
-  expect(isMap(properties[6])).toBe(true)
-  mType = properties[6].xtpType as MapType
-  expect(mType.keyType.kind).toBe('string')
-  expect(mType.valueType.kind).toBe('array')
-  let vType = mType.valueType as ArrayType
-  expect(vType.elementType.nullable).toBe(true)
-  expect(vType.elementType.kind).toBe('date-time')
-  expect(isInt32(properties[7])).toBe(true)
+  expect(isInt32(properties[6])).toBe(true)
+  expect(properties[6].required).toBe(false)
 
   // proves we derferenced it
   expect(properties[0].$ref?.enum).toStrictEqual(validV1Doc.components.schemas['GhostGang'].enum)
@@ -66,8 +63,5 @@ test('parse-v1-document', () => {
   // proves we derferenced it
   expect(exp.input?.$ref?.enum).toStrictEqual(validV1Doc.components.schemas['Fruit'].enum)
   expect(exp.output?.contentType).toBe('application/json')
-
-
-
 })
 
