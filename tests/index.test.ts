@@ -1,4 +1,4 @@
-import { parse, helpers, MapType, ArrayType } from '../src/index';
+import { parse, helpers, MapType, ArrayType, DateTimeType } from '../src/index';
 const { isBoolean, isObject, isString, isEnum, isDateTime, isInt32, isMap } = helpers;
 import * as yaml from 'js-yaml'
 import * as fs from 'fs'
@@ -8,7 +8,7 @@ const validV1Doc: any = yaml.load(fs.readFileSync('./tests/schemas/v1-valid-doc.
 test('parse-v1-document', () => {
   const doc = parse(JSON.stringify(validV1Doc))
 
-  console.log(JSON.stringify(doc, null, 4))
+  //console.log(JSON.stringify(doc, null, 4))
 
   // check top level document is correct
   expect(doc.version).toBe('v1')
@@ -49,6 +49,20 @@ test('parse-v1-document', () => {
   expect(mType.valueType.kind).toBe('string')
   expect(isInt32(properties[6])).toBe(true)
   expect(properties[6].required).toBe(false)
+  // Map<string, Map<string, Array<Date | null>>
+  expect(isMap(properties[7])).toBe(true)
+  expect(properties[7].required).toBe(false)
+  mType = properties[7].xtpType as MapType
+  expect(mType.keyType.kind).toBe('string')
+  expect(mType.valueType.kind).toBe('map')
+  mType = mType.valueType as MapType
+  expect(mType.keyType.kind).toBe('string')
+  expect(mType.valueType.kind).toBe('array')
+  let aType = mType.valueType as ArrayType
+  expect(aType.kind).toBe('array')
+  expect(aType.elementType.kind).toBe('date-time')
+  expect(aType.elementType.nullable).toBe(true)
+
 
   // proves we derferenced it
   expect(properties[0].$ref?.enum).toStrictEqual(validV1Doc.components.schemas['GhostGang'].enum)
