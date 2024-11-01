@@ -9,6 +9,7 @@ import { ValidationError } from "./common"
 export interface ParseResult {
   doc?: VUnknownSchema;
   errors?: ValidationError[];
+  warnings?: ValidationError[];
 }
 
 /**
