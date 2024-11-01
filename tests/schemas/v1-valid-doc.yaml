@@ -1,0 +1,114 @@
+---
+version: v1-draft
+exports:
+  voidFunc:
+    description: |
+      This demonstrates how you can create an export with
+      no inputs or outputs.
+  primitiveTypeFunc:
+    description: |
+      This demonstrates how you can accept or return primtive types.
+      This function takes a utf8 string and returns a json encoded boolean
+    input:
+      type: string
+      description: A string passed into plugin input
+      contentType: text/plain; charset=utf-8
+    output:
+      type: boolean
+      description: A boolean encoded as json
+      contentType: application/json
+    codeSamples:
+    - lang: typescript
+      label: |
+        Test if a string has more than one character.
+        Code samples show up in documentation and inline in docstrings
+      source: |
+        function primitiveTypeFunc(input: string): boolean {
+          return input.length > 1
+        }
+  referenceTypeFunc:
+    description: |
+      This demonstrates how you can accept or return references to schema types.
+      And it shows how you can define an enum to be used as a property or input/output.
+    input:
+      contentType: application/json
+      "$ref": "#/components/schemas/Fruit"
+    output:
+      contentType: application/json
+      "$ref": "#/components/schemas/ComplexObject"
+imports:
+  eatAFruit:
+    description: |
+      This is a host function. Right now host functions can only be the type (i64) -> i64.
+      We will support more in the future. Much of the same rules as exports apply.
+    input:
+      contentType: text/plain; charset=utf-8
+      "$ref": "#/components/schemas/Fruit"
+    output:
+      type: boolean
+      description: boolean encoded as json
+      contentType: application/json
+components:
+  schemas:
+    Fruit:
+      description: A set of available fruits you can consume
+      enum:
+      - apple
+      - orange
+      - banana
+      - strawberry
+    GhostGang:
+      description: A set of all the enemies of pac-man
+      enum:
+      - blinky
+      - pinky
+      - inky
+      - clyde
+    ComplexObject:
+      description: A complex json object
+      required:
+        - ghost
+        - aBoolean
+      properties:
+        ghost:
+          "$ref": "#/components/schemas/GhostGang"
+          description: I can override the description for the property here
+        aBoolean:
+          type: boolean
+          description: A boolean prop
+        aString:
+          type: string
+          description: An string prop
+        anInt:
+          type: integer
+          format: int32
+          description: An int prop
+        anOptionalDate:
+          type: string
+          format: date-time
+          description: |-
+            A datetime object, we will automatically serialize and deserialize
+            this for you.
+          nullable: true
+        aMap:
+          description: a string map
+          additionalProperties:
+            type: string
+        anIntRef:
+          description: a ref to an int which is weird but whatever!
+          $ref: "#/components/schemas/MyInt"
+        aMapOfMapsOfNullableDateArrays:
+          description: a weird map, it's too deep to cast correctly right now
+          additionalProperties:
+            additionalProperties:
+              items:
+                nullable: true
+                type: string
+                format: date-time
+    MyInt:
+      description: an int as a schema
+      type: integer
+    MapSchema:
+      additionalProperties:
+        type: string
+
