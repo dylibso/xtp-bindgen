@@ -105,6 +105,9 @@ components:
                 nullable: true
                 type: string
                 format: date-time
+        anUntypedObject:
+          description: An untyped object with no properties
+          type: object
     MyInt:
       description: an int as a schema
       type: integer

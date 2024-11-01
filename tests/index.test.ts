@@ -63,6 +63,8 @@ test('parse-v1-document', () => {
   expect(aType.elementType.kind).toBe('date-time')
   expect(aType.elementType.nullable).toBe(true)
 
+  // untyped object
+  expect(isObject(properties[8])).toBe(true)
 
   // proves we derferenced it
   expect(properties[0].$ref?.enum).toStrictEqual(validV1Doc.components.schemas['GhostGang'].enum)

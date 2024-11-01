@@ -187,7 +187,10 @@ class V1SchemaNormalizer {
     if (s.xtpType) return s.xtpType // no need to recalculate
 
     // we can assume this is an object type
-    if (s.properties && s.properties.length > 0) {
+    // if it has type = 'object' or has properties present
+    if ((s.type && s.type === 'object') ||
+      (s.properties && s.properties.length > 0)) {
+
       const properties: XtpNormalizedType[] = []
       for (const pname in s.properties!) {
         const p = s.properties[pname]

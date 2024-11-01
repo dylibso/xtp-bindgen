@@ -8,6 +8,7 @@ export type XtpNormalizedKind =
   'int32' | 'int64' | 'float' | 'double' |
   'boolean' | 'date-time' | 'byte' | 'buffer'
 
+
 // applies type opts to a type on construction
 function cons(t: XtpNormalizedType, opts?: XtpTypeOpts): XtpNormalizedType {
   // default them to false
