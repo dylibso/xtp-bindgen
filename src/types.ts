@@ -12,13 +12,11 @@ export type XtpNormalizedKind =
 function cons(t: XtpNormalizedType, opts?: XtpTypeOpts): XtpNormalizedType {
   // default them to false
   t.nullable = (opts?.nullable === undefined) ? false : opts.nullable
-  t.required = (opts?.required === undefined) ? false : opts.required
   return t
 }
 
 export interface XtpTypeOpts {
   nullable?: boolean;
-  required?: boolean;
 }
 
 export interface XtpNormalizedType extends XtpTypeOpts {
