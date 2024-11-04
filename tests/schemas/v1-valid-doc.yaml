@@ -108,6 +108,14 @@ components:
         anUntypedObject:
           description: An untyped object with no properties
           type: object
+        type:
+          type: string
+          description: An enum prop
+          enum: [complex, simple]
+        format:
+          type: string
+          description: An enum prop
+          enum: [json, xml]
     MyInt:
       description: an int as a schema
       type: integer
