@@ -286,8 +286,11 @@ export function parseAndNormalizeJson(encoded: string): XtpSchema {
   const { doc, errors } = parser.parseAny(JSON.parse(encoded))
 
   if (errors && errors.length > 0) {
-    console.log(JSON.stringify(errors))
-    throw Error(`Invalid document`)
+    if (errors.length === 1) {
+      throw new NormalizeError(errors[0].message, errors)
+    } else {
+      throw new NormalizeError(`${errors[0].message} (and ${errors.length - 1} other error(s))`, errors)
+    }
   }
 
   if (parser.isV0Schema(doc)) {
@@ -295,6 +298,15 @@ export function parseAndNormalizeJson(encoded: string): XtpSchema {
   } else if (parser.isV1Schema(doc)) {
     return normalizeV1Schema(doc)
   } else {
-    throw new Error("Could not normalize unknown version of schema");
+    throw new NormalizeError("Could not normalize unknown version of schema", [{
+      message: "Could not normalize unknown version of schema",
+      path: '#/version',
+    }])
+  }
+}
+
+export class NormalizeError extends Error {
+  constructor(msg: string, public errors: ValidationError[]) {
+    super(msg)
   }
 }

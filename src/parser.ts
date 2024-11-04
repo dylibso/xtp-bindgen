@@ -69,7 +69,21 @@ class V1Validator {
    * This saves us a lot of code but might be a little bit slower.
    */
   validateNode(node: any) {
-    this.validateTypedInterface(node)
+    const currentPath = this.getLocation()
+
+    // allow defining properties/exports/imports/schemas named `type` or `format`
+    const skipPatterns = [
+      /^#\/components\/schemas\/[^/]+\/properties$/,
+      /^#\/components\/schemas$/,
+      /^#\/components$/,
+      /^#\/exports$/,
+      /^#\/imports$/
+    ]
+    
+    const shouldValidate = skipPatterns.none(pattern => pattern.test(currentPath))
+    if (shouldValidate) {
+      this.validateTypedInterface(node)
+    }
 
     if (node && typeof node === 'object') {
       // i don't think we need to validate array children
@@ -104,7 +118,7 @@ class V1Validator {
 
     const validTypes = ['string', 'number', 'integer', 'boolean', 'object', 'array', 'buffer'];
     if (prop.type && !validTypes.includes(prop.type)) {
-      this.recordError(`Invalid type '${prop.type}'. Options are: ${validTypes.map(t => `'${t}'`).join(', ')}`)
+      this.recordError(`Invalid type '${stringify(prop.type)}'. Options are: ${validTypes.map(t => `'${t}'`).join(', ')}`)
     }
 
     if (prop.format) {
@@ -118,7 +132,7 @@ class V1Validator {
       }
 
       if (!validFormats.includes(prop.format)) {
-        this.recordError(`Invalid format ${prop.format} for type ${prop.type}. Valid formats are: ${validFormats.join(', ')}`)
+        this.recordError(`Invalid format ${stringify(prop.format)} for type ${stringify(prop.type)}. Valid formats are: ${validFormats.join(', ')}`)
       }
     }
 
@@ -129,6 +143,15 @@ class V1Validator {
   getLocation(): string {
     return this.location.join('/')
   }
+}
+
+
+function stringify(typ: any): string {
+  if (typeof typ === 'object') {
+    return JSON.stringify(typ)
+  }
+
+  return `${typ}`
 }
 
 
