@@ -289,7 +289,7 @@ export function parseAndNormalizeJson(encoded: string): XtpSchema {
     if (errors.length === 1) {
       throw new NormalizeError(errors[0].message, errors)
     } else {
-      throw new NormalizeError("Multiple errors parsing schema", errors)
+      throw new NormalizeError(`${errors[0].message} (and ${errors.length - 1} other error(s))`, errors)
     }
   }
 
