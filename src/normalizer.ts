@@ -116,12 +116,12 @@ interface CycleDetectionContext {
 }
 
 function detectSchemaRefCycles(
-  schema: Schema, 
-  schemas: SchemaMap, 
+  schema: Schema,
+  schemas: SchemaMap,
   context: CycleDetectionContext
 ): void {
   const schemaName = schema.name;
-  
+
   // If we've seen this schema in current path, we have a cycle
   if (context.stack.has(schemaName)) {
     const cycle = context.path.slice(context.path.indexOf(schemaName));
@@ -186,7 +186,7 @@ function detectSchemaRefCycles(
   // Remove from current path stack
   context.stack.delete(schemaName);
   context.path.pop();
-  
+
   // Mark as fully visited
   context.visited.add(schemaName);
 }
@@ -199,7 +199,7 @@ class V1SchemaNormalizer {
   parsed: parser.V1Schema
   errors: ValidationError[] = []
   location: string[] = ['#']
-  
+
   constructor(parsed: parser.V1Schema) {
     this.parsed = parsed
   }
@@ -215,7 +215,7 @@ class V1SchemaNormalizer {
     if (this.parsed.components?.schemas) {
       this.location.push('components');
       this.location.push('schemas');
-      
+
       for (const name in this.parsed.components.schemas) {
         this.location.push(name);
         const pSchema = this.parsed.components.schemas[name];
@@ -250,10 +250,10 @@ class V1SchemaNormalizer {
         schema.name = name
         schema.properties = properties
         this.schemas[name] = schema
-        
+
         this.location.pop();
       }
-      
+
       this.location.pop();
       this.location.pop();
     }
@@ -315,7 +315,7 @@ class V1SchemaNormalizer {
       this.recordError("Not a valid ref " + ref);
       return null;
     }
-    
+
     const name = parts[3];
     const s = this.schemas[name]
     if (!s) {
@@ -334,6 +334,8 @@ class V1SchemaNormalizer {
     if ((s.type && s.type === 'object') ||
       (s.properties && s.properties.length > 0)) {
 
+      s.type = 'object'
+      
       const properties: XtpNormalizedType[] = []
       if (s.properties) {
         this.location.push('properties');
@@ -348,10 +350,11 @@ class V1SchemaNormalizer {
           this.location.pop();
         }
         this.location.pop();
+        return new ObjectType(s.name || '', properties, s)
+      } else {
+        // untyped object
+        return new ObjectType('', [], s)
       }
-
-      s.type = 'object'
-      return new ObjectType(s.name || '', properties, s)
     }
 
     if (s.$ref) {
@@ -436,12 +439,12 @@ export function parseAndNormalizeJson(encoded: string): XtpSchema {
   assert(errors)
 
   if (parser.isV0Schema(doc)) {
-    const {schema, errors} = normalizeV0Schema(doc)
+    const { schema, errors } = normalizeV0Schema(doc)
     assert(errors)
 
     return schema
   } else if (parser.isV1Schema(doc)) {
-    const {schema, errors} = normalizeV1Schema(doc)
+    const { schema, errors } = normalizeV1Schema(doc)
     assert(errors)
 
     return schema

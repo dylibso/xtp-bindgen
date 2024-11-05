@@ -1,4 +1,4 @@
-import { parse, helpers, MapType, ArrayType, DateTimeType, NormalizeError, ValidationError } from '../src/index';
+import { parse, helpers, MapType, ArrayType, NormalizeError, ValidationError, ObjectType } from '../src/index';
 const { isBoolean, isObject, isString, isEnum, isDateTime, isInt32, isMap } = helpers;
 import * as yaml from 'js-yaml'
 import * as fs from 'fs'
@@ -65,7 +65,8 @@ test('parse-v1-document', () => {
 
   // untyped object
   expect(isObject(properties[8])).toBe(true)
-
+  expect((properties[8].xtpType as ObjectType).name).toBe("")
+  
   // proves we derferenced it
   expect(properties[0].$ref?.enum).toStrictEqual(validV1Doc.components.schemas['GhostGang'].enum)
   expect(properties[0].$ref?.name).toBe('GhostGang')
