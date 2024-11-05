@@ -138,6 +138,17 @@ class V1SchemaNormalizer {
         this.location.push(name);
         const pSchema = this.parsed.components.schemas[name];
 
+        // validate that required properties are defined
+        if (pSchema.required) {
+          this.location.push('required');
+          for (const name of pSchema.required) {
+            if (!pSchema.properties?.[name]) {
+              this.recordError(`Property ${name} is required but not defined`);
+            }
+          }
+          this.location.pop();
+        }
+
         // turn any parser.Property map we have into Property[]
         const properties = []
         if (pSchema.properties) {
