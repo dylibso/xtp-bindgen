@@ -71,13 +71,14 @@ class V1Validator {
   validateNode(node: any) {
     const currentPath = this.getLocation()
 
-    // allow defining properties/exports/imports/schemas named `type` or `format`
+    // we want to skip validateTypedInterface for some paths
+    // that represent user-defined maps (i.e the keys are defined by the user)
     const skipPatterns = [
-      /^#\/components\/schemas\/[^/]+\/properties$/,
-      /^#\/components\/schemas$/,
-      /^#\/components$/,
-      /^#\/exports$/,
-      /^#\/imports$/
+      /^#\/components\/schemas\/[^/]+\/properties$/, // allow defining properties named `type` or `format`
+      /^#\/components\/schemas$/, // allow defining schemas named `type` or `format`
+      /^#\/components$/, // reserved for future use
+      /^#\/exports$/, // allow defining exports named `type` or `format`
+      /^#\/imports$/ // allow defining imports named `type` or `format`
     ]
     
     const shouldValidate = skipPatterns.none(pattern => pattern.test(currentPath))
