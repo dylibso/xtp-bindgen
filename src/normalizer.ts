@@ -86,8 +86,7 @@ export function isExport(e: any): e is Export {
 // These are the same for now
 export type Import = Export
 
-function normalizeV0Schema(parsed: parser.V0Schema): XtpSchema {
-  const version = 'v0'
+function normalizeV0Schema(parsed: parser.V0Schema): { schema: XtpSchema, errors: ValidationError[] } {
   const exports: Export[] = []
   const imports: Import[] = []
   const schemas = {}
@@ -99,12 +98,16 @@ function normalizeV0Schema(parsed: parser.V0Schema): XtpSchema {
   })
 
   return {
-    version,
-    exports,
-    imports,
-    schemas,
+    schema: {
+      version: 'v0',
+      exports,
+      imports,
+      schemas,
+    },
+    errors: []
   }
 }
+
 
 class V1SchemaNormalizer {
   version = 'v1'
@@ -112,49 +115,83 @@ class V1SchemaNormalizer {
   imports: Import[] = []
   schemas: SchemaMap = {}
   parsed: parser.V1Schema
-
+  errors: ValidationError[] = []
+  location: string[] = ['#']
+  
   constructor(parsed: parser.V1Schema) {
     this.parsed = parsed
   }
 
+  private recordError(msg: string) {
+    this.errors.push(
+      new ValidationError(msg, this.location.join('/'))
+    )
+  }
+
   normalize(): XtpSchema {
     // First let's create all our normalized schemas
-    // we need these first so we can point $refs to them 
-    for (const name in this.parsed.components?.schemas) {
-      const pSchema = this.parsed.components.schemas[name]
+    if (this.parsed.components?.schemas) {
+      this.location.push('components');
+      this.location.push('schemas');
+      
+      for (const name in this.parsed.components.schemas) {
+        this.location.push(name);
+        const pSchema = this.parsed.components.schemas[name];
 
-      // turn any parser.Property map we have into Property[]
-      const properties = []
-      if (pSchema.properties) {
-        for (const name in pSchema.properties) {
-          const required = pSchema.required?.includes(name)
-          properties.push({ ...pSchema.properties[name], name, required } as Property)
+        // turn any parser.Property map we have into Property[]
+        const properties = []
+        if (pSchema.properties) {
+          this.location.push('properties');
+          for (const name in pSchema.properties) {
+            this.location.push(name);
+            const required = pSchema.required?.includes(name)
+            properties.push({ ...pSchema.properties[name], name, required } as Property)
+            this.location.pop();
+          }
+          this.location.pop();
         }
-      }
 
-      // we hard cast instead of copy we we can mutate the $refs later
-      // TODO find a way around this
-      const schema = (pSchema as unknown) as Schema
-      schema.name = name
-      schema.properties = properties
-      this.schemas[name] = schema
+        // we hard cast instead of copy we we can mutate the $refs later
+        // TODO find a way around this
+        const schema = (pSchema as unknown) as Schema
+        schema.name = name
+        schema.properties = properties
+        this.schemas[name] = schema
+        
+        this.location.pop();
+      }
+      
+      this.location.pop();
+      this.location.pop();
     }
 
     // recursively annotate all typed interfaces in the document
     this.annotateType(this.parsed as any)
 
     // normalize exports
-    for (const name in this.parsed.exports) {
-      const ex = this.parsed.exports[name] as Export
-      ex.name = name
-      this.exports.push(ex)
+    if (this.parsed.exports) {
+      this.location.push('exports');
+      for (const name in this.parsed.exports) {
+        this.location.push(name);
+        const ex = this.parsed.exports[name] as Export
+        ex.name = name
+        this.exports.push(ex)
+        this.location.pop();
+      }
+      this.location.pop();
     }
 
     // normalize imports
-    for (const name in this.parsed.imports) {
-      const im = this.parsed.imports[name] as Import
-      im.name = name
-      this.imports.push(im)
+    if (this.parsed.imports) {
+      this.location.push('imports');
+      for (const name in this.parsed.imports) {
+        this.location.push(name);
+        const im = this.parsed.imports[name] as Import
+        im.name = name
+        this.imports.push(im)
+        this.location.pop();
+      }
+      this.location.pop();
     }
 
     return {
@@ -165,90 +202,90 @@ class V1SchemaNormalizer {
     }
   }
 
-  querySchemaRef(ref: string, location: string): Schema {
+  querySchemaRef(ref: string): Schema | null {
     const parts = ref.split('/')
-    if (parts[0] !== '#') throw new Error("Not a valid ref " + ref);
-    if (parts[1] !== 'components') throw new Error("Not a valid ref " + ref);
-    if (parts[2] !== 'schemas') throw new Error("Not a valid ref " + ref);
+    if (parts[0] !== '#' || parts[1] !== 'components' || parts[2] !== 'schemas') {
+      this.recordError("Not a valid ref " + ref);
+      return null;
+    }
+    
     const name = parts[3];
-
     const s = this.schemas[name]
     if (!s) {
       const availableSchemas = Object.keys(this.schemas).join(', ')
-      throw new Error(`invalid reference ${ref}. Cannot find schema ${name}. Options are: ${availableSchemas}`);
+      this.recordError(`Invalid reference ${ref}. Cannot find schema ${name}. Options are: [${availableSchemas}]`);
+      return null;
     }
 
     return s
   }
 
-  // Recursively derive and annotate types
   annotateType(s: any): XtpNormalizedType | undefined {
     if (!s || typeof s !== 'object' || Array.isArray(s)) return undefined
-    if (s.xtpType) return s.xtpType // no need to recalculate
+    if (s.xtpType) return s.xtpType
 
-    // we can assume this is an object type
-    // if it has type = 'object' or has properties present
     if ((s.type && s.type === 'object') ||
       (s.properties && s.properties.length > 0)) {
 
       const properties: XtpNormalizedType[] = []
-      for (const pname in s.properties!) {
-        const p = s.properties[pname]
-        const t = this.annotateType(p)!
-        p.xtpType = t
-        properties.push(t)
+      if (s.properties) {
+        this.location.push('properties');
+        for (const pname in s.properties) {
+          const p = s.properties[pname]
+          this.location.push(p.name ?? pname);
+          const t = this.annotateType(p)
+          if (t) {
+            p.xtpType = t
+            properties.push(t)
+          }
+          this.location.pop();
+        }
+        this.location.pop();
       }
 
-      // TODO remove this legacy code
-      // we need to derive old type here
       s.type = 'object'
-
-      return new ObjectType(s.name!, properties, s)
+      return new ObjectType(s.name || '', properties, s)
     }
 
     if (s.$ref) {
+      this.location.push('$ref');
       let ref = s.$ref
-      // this conditional takes the place of all the legacy code to replace
-      // the sring with the ref
       if (typeof s.$ref === 'string') {
-        ref = this.querySchemaRef(s.$ref, '')
-        s.$ref = ref
+        ref = this.querySchemaRef(s.$ref)
+        if (ref) {
+          s.$ref = ref
+        }
       }
 
-      // TODO remove this legacy code
-      // we need to derive old type here
       s.type = 'object'
-
-      return this.annotateType(ref)!
+      const result = ref ? this.annotateType(ref) : undefined;
+      this.location.pop();
+      return result;
     }
 
-    // enums can only be string enums right now
     if (s.enum) {
-      // TODO remove this legacy code
-      // we need to derive old type here
       s.type = 'enum'
-
-      return new EnumType(s.name!, new StringType(), s.enum, s)
+      return new EnumType(s.name || '', new StringType(), s.enum, s)
     }
 
-    // if items is present it's an array
     if (s.items) {
-      return new ArrayType(this.annotateType(s.items)!, s)
+      this.location.push('items');
+      const itemType = this.annotateType(s.items)
+      this.location.pop();
+      return itemType ? new ArrayType(itemType, s) : undefined
     }
 
-    // if additionalProperties is present it's a map
     if (s.additionalProperties) {
-      // TODO remove this legacy code
-      // we need to derive old type here
+      this.location.push('additionalProperties');
       s.type = 'map'
-
-      return new MapType(this.annotateType(s.additionalProperties)!, s)
+      const valueType = this.annotateType(s.additionalProperties)
+      this.location.pop();
+      return valueType ? new MapType(valueType, s) : undefined
     }
 
     switch (s.type) {
       case 'string':
-        if (s.format === 'date-time') return new DateTimeType(s)
-        return new StringType(s)
+        return s.format === 'date-time' ? new DateTimeType(s) : new StringType(s)
       case 'integer':
         return new Int32Type(s)
       case 'boolean':
@@ -260,7 +297,8 @@ class V1SchemaNormalizer {
         if (s.format === 'int64') return new Int64Type(s)
         if (s.format === 'float') return new FloatType(s)
         if (s.format === 'double') return new DoubleType(s)
-        throw new Error(`IDK how to parse this number ${JSON.stringify(s)}`)
+        this.recordError(`IDK how to parse this number: ${s.format}`);
+        return undefined
     }
 
     // if we get this far, we don't know what
@@ -269,39 +307,52 @@ class V1SchemaNormalizer {
       if (Object.prototype.hasOwnProperty.call(s, key)) {
         const child = s[key]
         if (child && typeof child === 'object' && !Array.isArray(child)) {
+          this.location.push(key);
           const t = this.annotateType(child);
           if (t) child.xtpType = t
+          this.location.pop();
         }
       }
     }
+    return undefined
   }
 }
 
-function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
+function normalizeV1Schema(parsed: parser.V1Schema): { schema: XtpSchema, errors: ValidationError[] } {
   const normalizer = new V1SchemaNormalizer(parsed)
-  return normalizer.normalize()
+  const schema = normalizer.normalize()
+  return { schema, errors: normalizer.errors }
 }
 
 export function parseAndNormalizeJson(encoded: string): XtpSchema {
   const { doc, errors } = parser.parseAny(JSON.parse(encoded))
+  assert(errors)
 
+  if (parser.isV0Schema(doc)) {
+    const {schema, errors} = normalizeV0Schema(doc)
+    assert(errors)
+
+    return schema
+  } else if (parser.isV1Schema(doc)) {
+    const {schema, errors} = normalizeV1Schema(doc)
+    assert(errors)
+
+    return schema
+  } else {
+    throw new NormalizeError("Could not normalize unknown version of schema", [{
+      message: "Could not normalize unknown version of schema",
+      path: '#/version',
+    }])
+  }
+}
+
+function assert(errors: ValidationError[] | undefined): void {
   if (errors && errors.length > 0) {
     if (errors.length === 1) {
       throw new NormalizeError(errors[0].message, errors)
     } else {
       throw new NormalizeError(`${errors[0].message} (and ${errors.length - 1} other error(s))`, errors)
     }
-  }
-
-  if (parser.isV0Schema(doc)) {
-    return normalizeV0Schema(doc)
-  } else if (parser.isV1Schema(doc)) {
-    return normalizeV1Schema(doc)
-  } else {
-    throw new NormalizeError("Could not normalize unknown version of schema", [{
-      message: "Could not normalize unknown version of schema",
-      path: '#/version',
-    }])
   }
 }
 

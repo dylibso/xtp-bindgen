@@ -118,7 +118,7 @@ class V1Validator {
 
     const validTypes = ['string', 'number', 'integer', 'boolean', 'object', 'array', 'buffer'];
     if (prop.type && !validTypes.includes(prop.type)) {
-      this.recordError(`Invalid type '${stringify(prop.type)}'. Options are: ${validTypes.map(t => `'${t}'`).join(', ')}`)
+      this.recordError(`Invalid type '${stringify(prop.type)}'. Options are: [${validTypes.map(t => `'${t}'`).join(', ')}]`)
     }
 
     if (prop.format) {
@@ -132,7 +132,7 @@ class V1Validator {
       }
 
       if (!validFormats.includes(prop.format)) {
-        this.recordError(`Invalid format ${stringify(prop.format)} for type ${stringify(prop.type)}. Valid formats are: ${validFormats.join(', ')}`)
+        this.recordError(`Invalid format ${stringify(prop.format)} for type ${stringify(prop.type)}. Valid formats are: [${validFormats.join(', ')}]`)
       }
     }
 
