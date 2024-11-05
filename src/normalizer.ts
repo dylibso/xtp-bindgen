@@ -108,6 +108,88 @@ function normalizeV0Schema(parsed: parser.V0Schema): { schema: XtpSchema, errors
   }
 }
 
+interface CycleDetectionContext {
+  visited: Set<string>;
+  stack: Set<string>;
+  path: string[];
+  errors: ValidationError[];
+}
+
+function detectSchemaRefCycles(
+  schema: Schema, 
+  schemas: SchemaMap, 
+  context: CycleDetectionContext
+): void {
+  const schemaName = schema.name;
+  
+  // If we've seen this schema in current path, we have a cycle
+  if (context.stack.has(schemaName)) {
+    const cycle = context.path.slice(context.path.indexOf(schemaName));
+    cycle.push(schemaName); // Complete the cycle
+    context.errors.push(
+      new ValidationError(
+        `Detected circular reference: ${cycle.join(' -> ')}`,
+        context.path.join('/')
+      )
+    );
+    return;
+  }
+
+  // If we've already fully validated this schema, skip
+  if (context.visited.has(schemaName)) {
+    return;
+  }
+
+  // Add to current path stack
+  context.stack.add(schemaName);
+  context.path.push(schemaName);
+
+  // Helper function to check anything that might have a $ref
+  function checkPossibleRef(obj: any, label: string) {
+    if (!obj) return;
+    context.path.push(label);
+
+    // Check direct $ref
+    if (obj.$ref && typeof obj.$ref !== 'string') {
+      detectSchemaRefCycles(obj.$ref, schemas, context);
+    }
+
+    // Check array items
+    if (obj.items) {
+      context.path.push('items');
+      if (obj.items.$ref && typeof obj.items.$ref !== 'string') {
+        detectSchemaRefCycles(obj.items.$ref, schemas, context);
+      }
+      context.path.pop();
+    }
+
+    // Check map values (additionalProperties)
+    if (obj.additionalProperties) {
+      context.path.push('additionalProperties');
+      checkPossibleRef(obj.additionalProperties, 'value');
+      context.path.pop();
+    }
+
+    context.path.pop();
+  }
+
+  // Check all properties with $refs
+  for (const prop of schema.properties) {
+    checkPossibleRef(prop, prop.name);
+  }
+
+  // Check additionalProperties (map values) if present
+  if (schema.additionalProperties) {
+    checkPossibleRef(schema.additionalProperties, 'additionalProperties');
+  }
+
+  // Remove from current path stack
+  context.stack.delete(schemaName);
+  context.path.pop();
+  
+  // Mark as fully visited
+  context.visited.add(schemaName);
+}
 
 class V1SchemaNormalizer {
   version = 'v1'
@@ -178,6 +260,20 @@ class V1SchemaNormalizer {
 
     // recursively annotate all typed interfaces in the document
     this.annotateType(this.parsed as any)
+
+    // detect cycles in schema references
+    const cycleContext: CycleDetectionContext = {
+      visited: new Set(),
+      stack: new Set(),
+      errors: [],
+      path: ['#', 'components', 'schemas'],
+    }
+
+    for (const schema of Object.values(this.schemas)) {
+      detectSchemaRefCycles(schema, this.schemas, cycleContext);
+    }
+
+    this.errors.push(...cycleContext.errors);
 
     // normalize exports
     if (this.parsed.exports) {

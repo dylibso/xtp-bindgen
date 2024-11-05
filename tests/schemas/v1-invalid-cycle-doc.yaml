@@ -1,0 +1,23 @@
+---
+version: v1-draft
+exports:
+  export1:
+    description: This is an export
+    input:
+      type: string
+    output:
+      contentType: application/json
+      "$ref": "#/components/schemas/ComplexObject"
+components:
+  schemas:
+    ComplexObject:
+      description: A complex json object
+      properties:
+        cycle:
+          "$ref": "#/components/schemas/AnotherType"
+    AnotherType:
+      description: Another type
+      properties:
+        complexObject:
+          "$ref": "#/components/schemas/ComplexObject"
+

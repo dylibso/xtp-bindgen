@@ -25,15 +25,7 @@ components:
       description: A complex json object
       required:
         - ghost
-        - aBoolean
+        - invalidPropRef
       properties:
         invalidPropRef:
           "$ref": "#/components/schemas/NonExistentPropertyRef"
-        cycle:
-          "$ref": "#/components/schemas/AnotherType"
-    AnotherType:
-      description: Another type
-      properties:
-        complexObject:
-          "$ref": "#/components/schemas/ComplexObject"
-

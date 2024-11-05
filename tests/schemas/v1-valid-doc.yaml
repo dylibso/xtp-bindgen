@@ -116,6 +116,9 @@ components:
           type: string
           description: An enum prop
           enum: [json, xml]
+        ComplexObject:
+          type: string
+          description: this is here to make sure we can have a property with the same name as the schema
     MyInt:
       description: an int as a schema
       type: integer

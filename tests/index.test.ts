@@ -1,4 +1,4 @@
-import { parse, helpers, MapType, ArrayType, DateTimeType, NormalizeError } from '../src/index';
+import { parse, helpers, MapType, ArrayType, DateTimeType, NormalizeError, ValidationError } from '../src/index';
 const { isBoolean, isObject, isString, isEnum, isDateTime, isInt32, isMap } = helpers;
 import * as yaml from 'js-yaml'
 import * as fs from 'fs'
@@ -87,40 +87,34 @@ test('parse-v1-invalid-document', () => {
     parse(JSON.stringify(invalidV1Doc))
     expect(true).toBe('should have thrown')
   } catch (e) {
-    if (e instanceof NormalizeError) {
+    const expectedErrors = [
+      {
+        message: 'Invalid format date-time for type buffer. Valid formats are: []',
+        path: '#/exports/invalidFunc1/input'
+      },
+      {
+        message: 'Invalid format float for type string. Valid formats are: [date-time, byte]',
+        path: '#/exports/invalidFunc1/output'
+      },
+      {
+        message: 'Invalid format date-time for type boolean. Valid formats are: []',
+        path: '#/components/schemas/ComplexObject/properties/aBoolean'
+      },
+      {
+        message: 'Invalid format int32 for type string. Valid formats are: [date-time, byte]',
+        path: '#/components/schemas/ComplexObject/properties/aString'
+      },
+      {
+        message: 'Invalid format date-time for type integer. Valid formats are: [int32, int64]',
+        path: '#/components/schemas/ComplexObject/properties/anInt'
+      },
+      {
+        message: "Invalid type 'non'. Options are: ['string', 'number', 'integer', 'boolean', 'object', 'array', 'buffer']",
+        path: '#/components/schemas/ComplexObject/properties/aNonType'
+      }
+    ]
 
-      const expectedErrors = [
-        {
-          message: 'Invalid format date-time for type buffer. Valid formats are: []',
-          path: '#/exports/invalidFunc1/input'
-        },
-        {
-          message: 'Invalid format float for type string. Valid formats are: [date-time, byte]',
-          path: '#/exports/invalidFunc1/output'
-        },
-        {
-          message: 'Invalid format date-time for type boolean. Valid formats are: []',
-          path: '#/components/schemas/ComplexObject/properties/aBoolean'
-        },
-        {
-          message: 'Invalid format int32 for type string. Valid formats are: [date-time, byte]',
-          path: '#/components/schemas/ComplexObject/properties/aString'
-        },
-        {
-          message: 'Invalid format date-time for type integer. Valid formats are: [int32, int64]',
-          path: '#/components/schemas/ComplexObject/properties/anInt'
-        },
-        {
-          message: "Invalid type 'non'. Options are: ['string', 'number', 'integer', 'boolean', 'object', 'array', 'buffer']",
-          path: '#/components/schemas/ComplexObject/properties/aNonType'
-        }
-      ]
-
-      expect(e.errors.length).toBe(expectedErrors.length)
-      expect(e.errors).toEqual(expect.arrayContaining(expectedErrors))
-    } else {
-      throw e
-    }
+    expectErrors(e, expectedErrors)
   }
 })
 
@@ -130,31 +124,57 @@ test('parse-v1-invalid-ref-document', () => {
     parse(JSON.stringify(invalidV1Doc))
     expect(true).toBe('should have thrown')
   } catch (e) {
-    if (e instanceof NormalizeError) {
+    const expectedErrors = [
+      {
+        message: 'Invalid reference #/components/schemas/NonExistentExportInputRef. Cannot find schema NonExistentExportInputRef. Options are: [ComplexObject]',
+        path: '#/exports/invalidFunc/input/$ref'
+      },
+      {
+        message: 'Invalid reference #/components/schemas/NonExistentImportOutputRef. Cannot find schema NonExistentImportOutputRef. Options are: [ComplexObject]',
+        path: '#/imports/invalidImport/output/$ref'
+      },
+      {
+        message: 'Invalid reference #/components/schemas/NonExistentPropertyRef. Cannot find schema NonExistentPropertyRef. Options are: [ComplexObject]',
+        path: '#/components/schemas/ComplexObject/properties/invalidPropRef/$ref'
+      },
+      {
+        message: 'Not a valid ref some invalid ref',
+        path: '#/exports/invalidFunc/output/$ref'
+      },
+      {
+        message: "Property ghost is required but not defined",
+        path: "#/components/schemas/ComplexObject/required"
+      }
+    ]
 
-      const expectedErrors = [
-        {
-          message: 'Invalid reference #/components/schemas/NonExistentExportInputRef. Cannot find schema NonExistentExportInputRef. Options are: [ComplexObject]',
-          path: '#/exports/invalidFunc/input/$ref'
-        },
-        {
-          message: 'Invalid reference #/components/schemas/NonExistentImportOutputRef. Cannot find schema NonExistentImportOutputRef. Options are: [ComplexObject]',
-          path: '#/imports/invalidImport/output/$ref'
-        },
-        {
-          message: 'Invalid reference #/components/schemas/NonExistentPropertyRef. Cannot find schema NonExistentPropertyRef. Options are: [ComplexObject]',
-          path: '#/components/schemas/ComplexObject/properties/invalidPropRef/$ref'
-        },
-        {
-          message: 'Not a valid ref some invalid ref',
-          path: '#/exports/invalidFunc/output/$ref'
-        }
-      ]
-
-      expect(e.errors.length).toBe(expectedErrors.length)
-      expect(e.errors).toEqual(expect.arrayContaining(expectedErrors))
-    } else {
-      throw e
-    }
+    expectErrors(e, expectedErrors)
   }
 })
+
+test('parse-v1-cycle-doc', () => {
+  const cycleDoc: any = yaml.load(fs.readFileSync('./tests/schemas/v1-invalid-cycle-doc.yaml', 'utf8'))
+  try {
+    const schema = parse(JSON.stringify(cycleDoc))
+    JSON.stringify(schema) // if we get here, this will throw
+  } catch (e) {
+    const expectedErrors = [
+      {
+        message: 'Detected circular reference: ComplexObject -> cycle -> AnotherType -> complexObject -> ComplexObject',
+        path: '#/components/schemas/ComplexObject/cycle/AnotherType/complexObject'
+      }
+    ]
+
+    expectErrors(e, expectedErrors)
+  }
+})
+
+function expectErrors(e: any, expectedErrors: ValidationError[]) {
+  if (e instanceof NormalizeError) {
+    const sortByPath = (a: ValidationError, b: ValidationError) => a.path.localeCompare(b.path);
+    expect([...e.errors].sort(sortByPath)).toEqual([...expectedErrors].sort(sortByPath));
+
+    return
+  }
+
+  throw e
+}
