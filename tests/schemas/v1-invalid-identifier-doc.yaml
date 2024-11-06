@@ -1,0 +1,67 @@
+---
+version: v1-draft
+exports:
+  invalid@Func:
+    description: |
+      This demonstrates how you can create an export with
+      no inputs or outputs.
+  "invalid invalid":
+    description: |
+      This demonstrates how you can accept or return primtive types.
+      This function takes a utf8 string and returns a json encoded boolean
+    input:
+      type: string
+      description: A string passed into plugin input
+      contentType: text/plain; charset=utf-8
+    output:
+      type: boolean
+      description: A boolean encoded as json
+      contentType: application/json
+  referenc/eTypeFunc:
+    description: |
+      This demonstrates how you can accept or return references to schema types.
+      And it shows how you can define an enum to be used as a property or input/output.
+    input:
+      contentType: application/json
+      "$ref": "#/components/schemas/Fruit"
+    output:
+      contentType: application/json
+      "$ref": "#/components/schemas/ComplexObject"
+imports:
+  eatA:Fruit:
+    description: |
+      This is a host function. Right now host functions can only be the type (i64) -> i64.
+      We will support more in the future. Much of the same rules as exports apply.
+    input:
+      contentType: text/plain; charset=utf-8
+      "$ref": "#/components/schemas/Fruit"
+    output:
+      type: boolean
+      description: boolean encoded as json
+      contentType: application/json
+components:
+  schemas:
+    Fruit:
+      description: A set of available fruits you can consume
+      enum:
+      - apple
+      - orange
+      - banana
+      - strawberry
+    Ghost)Gang:
+      description: A set of all the enemies of pac-man
+      enum:
+      - blinky
+      - pinky
+      - inky
+      - clyde
+      - "spooky ghost"
+    ComplexObject:
+      description: A complex json object
+      properties:
+        "gh ost":
+          "$ref": "#/components/schemas/Ghost)Gang"
+          description: I can override the description for the property here
+        aBoo{lean:
+          type: boolean
+          description: A boolean prop

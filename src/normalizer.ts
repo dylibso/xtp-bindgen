@@ -218,6 +218,11 @@ class V1SchemaNormalizer {
 
       for (const name in this.parsed.components.schemas) {
         this.location.push(name);
+        if (!this.validateIdentifier(name)) {
+          this.location.pop();
+          continue;
+        }
+
         const pSchema = this.parsed.components.schemas[name];
 
         // validate that required properties are defined
@@ -237,6 +242,11 @@ class V1SchemaNormalizer {
           this.location.push('properties');
           for (const name in pSchema.properties) {
             this.location.push(name);
+            if (!this.validateIdentifier(name)) {
+              this.location.pop();
+              continue;
+            }
+
             const required = pSchema.required?.includes(name)
             properties.push({ ...pSchema.properties[name], name, required } as Property)
             this.location.pop();
@@ -253,7 +263,7 @@ class V1SchemaNormalizer {
 
         this.location.pop();
       }
-
+      
       this.location.pop();
       this.location.pop();
     }
@@ -277,9 +287,15 @@ class V1SchemaNormalizer {
 
     // normalize exports
     if (this.parsed.exports) {
+      
       this.location.push('exports');
       for (const name in this.parsed.exports) {
         this.location.push(name);
+        if (!this.validateIdentifier(name)) {
+          this.location.pop();
+          continue;
+        }
+
         const ex = this.parsed.exports[name] as Export
         ex.name = name
         this.exports.push(ex)
@@ -293,6 +309,11 @@ class V1SchemaNormalizer {
       this.location.push('imports');
       for (const name in this.parsed.imports) {
         this.location.push(name);
+        if (!this.validateIdentifier(name)) {
+          this.location.pop();
+          continue;
+        }
+
         const im = this.parsed.imports[name] as Import
         im.name = name
         this.imports.push(im)
@@ -335,7 +356,7 @@ class V1SchemaNormalizer {
       (s.properties && s.properties.length > 0)) {
 
       s.type = 'object'
-      
+
       const properties: XtpNormalizedType[] = []
       if (s.properties) {
         this.location.push('properties');
@@ -374,7 +395,18 @@ class V1SchemaNormalizer {
     }
 
     if (s.enum) {
+      this.location.push('enum');
+      for (const item of s.enum) {
+        if (typeof item !== 'string') {
+          this.recordError(`Enum item must be a string: ${item}`);
+          return undefined
+        }
+
+        this.validateIdentifier(item)
+      }
+
       s.type = 'enum'
+      this.location.pop();
       return new EnumType(s.name || '', new StringType(), s.enum, s)
     }
 
@@ -425,6 +457,15 @@ class V1SchemaNormalizer {
       }
     }
     return undefined
+  }
+
+  validateIdentifier(name: string): boolean {
+    if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
+      this.recordError(`Invalid identifier: "${name}". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/`);
+      return false;
+    }
+
+    return true;
   }
 }
 

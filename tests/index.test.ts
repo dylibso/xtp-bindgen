@@ -169,6 +169,52 @@ test('parse-v1-cycle-doc', () => {
   }
 })
 
+test('parse-v1-invalid-identifiers-doc', () => {
+  const identifierDoc: any = yaml.load(fs.readFileSync('./tests/schemas/v1-invalid-identifier-doc.yaml', 'utf8'))
+
+  try {
+    parse(JSON.stringify(identifierDoc))
+    expect(true).toBe('should have thrown')
+  } catch (e) {
+    const expectedErrors = [
+      {
+        message: 'Invalid identifier: "Ghost)Gang". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        path: '#/components/schemas/Ghost)Gang'
+      },
+      {
+        message: 'Invalid identifier: "gh ost". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        path: '#/components/schemas/ComplexObject/properties/gh ost'
+      },
+      {
+        message: 'Invalid identifier: "aBoo{lean". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        path: '#/components/schemas/ComplexObject/properties/aBoo{lean'
+      },
+      {
+        message: 'Invalid identifier: "spooky ghost". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        path: '#/components/schemas/Ghost)Gang/enum'
+      },
+      {
+        message: 'Invalid identifier: "invalid@Func". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        path: '#/exports/invalid@Func'
+      },
+      {
+        message: 'Invalid identifier: "invalid invalid". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        path: '#/exports/invalid invalid'
+      },
+      {
+        message: 'Invalid identifier: "referenc/eTypeFunc". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        path: '#/exports/referenc/eTypeFunc'
+      },
+      {
+        message: 'Invalid identifier: "eatA:Fruit". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        path: '#/imports/eatA:Fruit'
+      }
+    ]
+
+    expectErrors(e, expectedErrors)
+  }
+})
+
 function expectErrors(e: any, expectedErrors: ValidationError[]) {
   if (e instanceof NormalizeError) {
     const sortByPath = (a: ValidationError, b: ValidationError) => a.path.localeCompare(b.path);
