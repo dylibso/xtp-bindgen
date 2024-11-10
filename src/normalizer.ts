@@ -204,9 +204,10 @@ class V1SchemaNormalizer {
     this.parsed = parsed
   }
 
-  private recordError(msg: string) {
+  private recordError(msg: string, additionalPath?: string[]) {
+    const path = additionalPath ? [...this.location, ...additionalPath] : this.location
     this.errors.push(
-      new ValidationError(msg, this.location.join('/'))
+      new ValidationError(msg, path.join('/'))
     )
   }
 
@@ -218,58 +219,53 @@ class V1SchemaNormalizer {
 
       for (const name in this.parsed.components.schemas) {
         this.location.push(name);
-        if (!this.validateIdentifier(name)) {
-          this.location.pop();
-          continue;
-        }
+        try {
+          if (!this.validateIdentifier(name, [])) {
+            continue;
+          }
 
-        const pSchema = this.parsed.components.schemas[name];
+          const pSchema = this.parsed.components.schemas[name];
 
-        // validate that required properties are defined
-        if (pSchema.required) {
-          this.location.push('required');
-          for (const name of pSchema.required) {
-            if (!pSchema.properties?.[name]) {
-              this.recordError(`Property ${name} is required but not defined`);
+          // validate that required properties are defined
+          if (pSchema.required) {
+            for (const name of pSchema.required) {
+              if (!pSchema.properties?.[name]) {
+                this.recordError(`Property ${name} is required but not defined`, ['required']);
+              }
             }
           }
-          this.location.pop();
-        }
 
-        // turn any parser.Property map we have into Property[]
-        const properties = []
-        if (pSchema.properties) {
-          this.location.push('properties');
-          for (const name in pSchema.properties) {
-            this.location.push(name);
-            if (!this.validateIdentifier(name)) {
-              this.location.pop();
-              continue;
+          // turn any parser.Property map we have into Property[]
+          const properties = []
+          if (pSchema.properties) {
+            for (const name in pSchema.properties) {
+              if (!this.validateIdentifier(name, ['properties', name])) {
+                continue;
+              }
+
+              const required = pSchema.required?.includes(name)
+              properties.push({ ...pSchema.properties[name], name, required } as Property)
             }
-
-            const required = pSchema.required?.includes(name)
-            properties.push({ ...pSchema.properties[name], name, required } as Property)
-            this.location.pop();
           }
+
+          // we hard cast instead of copy we we can mutate the $refs later
+          // TODO find a way around this
+          const schema = (pSchema as unknown) as Schema
+          schema.name = name
+          schema.properties = properties
+          this.schemas[name] = schema
+
+        } finally {
           this.location.pop();
         }
-
-        // we hard cast instead of copy we we can mutate the $refs later
-        // TODO find a way around this
-        const schema = (pSchema as unknown) as Schema
-        schema.name = name
-        schema.properties = properties
-        this.schemas[name] = schema
-
-        this.location.pop();
       }
-      
+
       this.location.pop();
       this.location.pop();
     }
 
     // recursively annotate all typed interfaces in the document
-    this.annotateType(this.parsed as any)
+    this.annotateType(this.parsed as any, [])
 
     // detect cycles in schema references
     const cycleContext: CycleDetectionContext = {
@@ -287,39 +283,29 @@ class V1SchemaNormalizer {
 
     // normalize exports
     if (this.parsed.exports) {
-      
-      this.location.push('exports');
+
       for (const name in this.parsed.exports) {
-        this.location.push(name);
-        if (!this.validateIdentifier(name)) {
-          this.location.pop();
+        if (!this.validateIdentifier(name, ['exports', name])) {
           continue;
         }
 
         const ex = this.parsed.exports[name] as Export
         ex.name = name
         this.exports.push(ex)
-        this.location.pop();
       }
-      this.location.pop();
     }
 
     // normalize imports
     if (this.parsed.imports) {
-      this.location.push('imports');
       for (const name in this.parsed.imports) {
-        this.location.push(name);
-        if (!this.validateIdentifier(name)) {
-          this.location.pop();
+        if (!this.validateIdentifier(name, ['imports', name])) {
           continue;
         }
 
         const im = this.parsed.imports[name] as Import
         im.name = name
         this.imports.push(im)
-        this.location.pop();
       }
-      this.location.pop();
     }
 
     return {
@@ -330,10 +316,10 @@ class V1SchemaNormalizer {
     }
   }
 
-  querySchemaRef(ref: string): Schema | null {
+  querySchemaRef(ref: string, path: string[]): Schema | null {
     const parts = ref.split('/')
     if (parts[0] !== '#' || parts[1] !== 'components' || parts[2] !== 'schemas') {
-      this.recordError("Not a valid ref " + ref);
+      this.recordError("Not a valid ref " + ref, path);
       return null;
     }
 
@@ -341,14 +327,14 @@ class V1SchemaNormalizer {
     const s = this.schemas[name]
     if (!s) {
       const availableSchemas = Object.keys(this.schemas).join(', ')
-      this.recordError(`Invalid reference ${ref}. Cannot find schema ${name}. Options are: [${availableSchemas}]`);
+      this.recordError(`Invalid reference ${ref}. Cannot find schema ${name}. Options are: [${availableSchemas}]`, path);
       return null;
     }
 
     return s
   }
 
-  annotateType(s: any): XtpNormalizedType | undefined {
+  annotateType(s: any, path: string[]): XtpNormalizedType | undefined {
     if (!s || typeof s !== 'object' || Array.isArray(s)) return undefined
     if (s.xtpType) return s.xtpType
 
@@ -359,18 +345,15 @@ class V1SchemaNormalizer {
 
       const properties: XtpNormalizedType[] = []
       if (s.properties) {
-        this.location.push('properties');
         for (const pname in s.properties) {
           const p = s.properties[pname]
-          this.location.push(p.name ?? pname);
-          const t = this.annotateType(p)
+          
+          const t = this.annotateType(p, [...path, 'properties', p.name ?? pname])
           if (t) {
             p.xtpType = t
             properties.push(t)
           }
-          this.location.pop();
         }
-        this.location.pop();
         return new ObjectType(s.name || '', properties, s)
       } else {
         // untyped object
@@ -379,49 +362,41 @@ class V1SchemaNormalizer {
     }
 
     if (s.$ref) {
-      this.location.push('$ref');
       let ref = s.$ref
       if (typeof s.$ref === 'string') {
-        ref = this.querySchemaRef(s.$ref)
+        ref = this.querySchemaRef(s.$ref, [...path, '$ref'])
         if (ref) {
           s.$ref = ref
         }
       }
 
       s.type = 'object'
-      const result = ref ? this.annotateType(ref) : undefined;
-      this.location.pop();
+      const result = ref ? this.annotateType(ref, [...path, '$ref']) : undefined;
       return result;
     }
 
     if (s.enum) {
-      this.location.push('enum');
       for (const item of s.enum) {
         if (typeof item !== 'string') {
           this.recordError(`Enum item must be a string: ${item}`);
           return undefined
         }
 
-        this.validateIdentifier(item)
+        this.validateIdentifier(item, [...path, 'enum']);
       }
 
       s.type = 'enum'
-      this.location.pop();
       return new EnumType(s.name || '', new StringType(), s.enum, s)
     }
 
     if (s.items) {
-      this.location.push('items');
-      const itemType = this.annotateType(s.items)
-      this.location.pop();
+      const itemType = this.annotateType(s.items, [...path, 'items'])
       return itemType ? new ArrayType(itemType, s) : undefined
     }
 
     if (s.additionalProperties) {
-      this.location.push('additionalProperties');
       s.type = 'map'
-      const valueType = this.annotateType(s.additionalProperties)
-      this.location.pop();
+      const valueType = this.annotateType(s.additionalProperties, [...path, 'additionalProperties'])
       return valueType ? new MapType(valueType, s) : undefined
     }
 
@@ -449,19 +424,17 @@ class V1SchemaNormalizer {
       if (Object.prototype.hasOwnProperty.call(s, key)) {
         const child = s[key]
         if (child && typeof child === 'object' && !Array.isArray(child)) {
-          this.location.push(key);
-          const t = this.annotateType(child);
+          const t = this.annotateType(child, [...path, key]);
           if (t) child.xtpType = t
-          this.location.pop();
         }
       }
     }
     return undefined
   }
 
-  validateIdentifier(name: string): boolean {
+  validateIdentifier(name: string, path: string[]): boolean {
     if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
-      this.recordError(`Invalid identifier: "${name}". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/`);
+      this.recordError(`Invalid identifier: "${name}". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/`, path);
       return false;
     }
 
