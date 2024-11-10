@@ -1,0 +1,31 @@
+---
+version: v1-draft
+exports:
+  invalidFunc:
+    description: Has some invalid parameters
+    input:
+      contentType: application/json
+      "$ref": "#/components/schemas/NonExistentExportInputRef"
+    output:
+      contentType: application/json
+      "$ref": "some invalid ref"
+imports:
+  invalidImport:
+    description: |
+      This is a host function. Right now host functions can only be the type (i64) -> i64.
+      We will support more in the future. Much of the same rules as exports apply.
+    input:
+      type: string
+    output:
+      contentType: application/json
+      "$ref": "#/components/schemas/NonExistentImportOutputRef"
+components:
+  schemas:
+    ComplexObject:
+      description: A complex json object
+      required:
+        - ghost
+        - invalidPropRef
+      properties:
+        invalidPropRef:
+          "$ref": "#/components/schemas/NonExistentPropertyRef"
