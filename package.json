@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-rc.15",
+  "version": "1.0.0-rc.16",
   "name": "@dylibso/xtp-bindgen",
   "description": "XTP bindgen helper library",
   "main": "dist/index.js",

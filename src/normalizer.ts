@@ -347,7 +347,7 @@ class V1SchemaNormalizer {
       if (s.properties) {
         for (const pname in s.properties) {
           const p = s.properties[pname]
-          
+
           const t = this.annotateType(p, [...path, 'properties', p.name ?? pname])
           if (t) {
             p.xtpType = t
@@ -404,14 +404,15 @@ class V1SchemaNormalizer {
       case 'string':
         return s.format === 'date-time' ? new DateTimeType(s) : new StringType(s)
       case 'integer':
-        return new Int32Type(s)
+        if (s.format === 'int32') return new Int32Type(s)
+        if (s.format === 'int64') return new Int64Type(s)
+        this.recordError(`IDK how to parse this integer: ${s.format}`);
+        return undefined
       case 'boolean':
         return new BooleanType(s)
       case 'buffer':
         return new BufferType(s)
       case 'number':
-        if (s.format === 'int32') return new Int32Type(s)
-        if (s.format === 'int64') return new Int64Type(s)
         if (s.format === 'float') return new FloatType(s)
         if (s.format === 'double') return new DoubleType(s)
         this.recordError(`IDK how to parse this number: ${s.format}`);
