@@ -1,5 +1,5 @@
 import { parse, helpers, MapType, ArrayType, NormalizeError, ValidationError, ObjectType } from '../src/index';
-const { isBoolean, isObject, isString, isEnum, isDateTime, isInt32, isMap } = helpers;
+const { isBoolean, isObject, isString, isEnum, isDateTime, isInt32, isInt64, isMap } = helpers;
 import * as yaml from 'js-yaml'
 import * as fs from 'fs'
 
@@ -47,7 +47,7 @@ test('parse-v1-document', () => {
   let mType = properties[5].xtpType as MapType
   expect(mType.keyType.kind).toBe('string')
   expect(mType.valueType.kind).toBe('string')
-  expect(isInt32(properties[6])).toBe(true)
+  expect(isInt64(properties[6])).toBe(true)
   expect(properties[6].required).toBe(false)
   // Map<string, Map<string, Array<Date | null>>
   expect(isMap(properties[7])).toBe(true)
@@ -66,7 +66,7 @@ test('parse-v1-document', () => {
   // untyped object
   expect(isObject(properties[8])).toBe(true)
   expect((properties[8].xtpType as ObjectType).name).toBe("")
-  
+
   // proves we derferenced it
   expect(properties[0].$ref?.enum).toStrictEqual(validV1Doc.components.schemas['GhostGang'].enum)
   expect(properties[0].$ref?.name).toBe('GhostGang')
