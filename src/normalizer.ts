@@ -413,9 +413,8 @@ class V1SchemaNormalizer {
         return new BufferType(s)
       case 'number':
         if (s.format === 'float') return new FloatType(s)
-        if (s.format === 'double') return new DoubleType(s)
-        this.recordError(`IDK how to parse this number: ${s.format}`);
-        return undefined
+        // default to double
+        return new DoubleType(s)
     }
 
     // if we get this far, we don't know what
