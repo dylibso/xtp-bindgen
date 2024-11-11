@@ -405,9 +405,8 @@ class V1SchemaNormalizer {
         return s.format === 'date-time' ? new DateTimeType(s) : new StringType(s)
       case 'integer':
         if (s.format === 'int32') return new Int32Type(s)
-        if (s.format === 'int64') return new Int64Type(s)
-        this.recordError(`IDK how to parse this integer: ${s.format}`);
-        return undefined
+        // default to int64
+        return new Int64Type(s)
       case 'boolean':
         return new BooleanType(s)
       case 'buffer':
