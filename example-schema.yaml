@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://xtp.dylibso.com/assets/wasm/schema.json
+# Learn more at https://docs.xtp.dylibso.com/docs/concepts/xtp-schema
+version: v1-draft
+exports: 
+  CountVowels:
+      input: 
+          $ref: "#/components/schemas/Vowels"
+          contentType: application/json
+      output:
+          $ref: "#/components/schemas/Count"
+          contentType: application/json
+components:
+  schemas:
+    Vowels:
+      description: The incoming vowel set and string to count vowels within.
+      properties:
+        content: 
+          type: string
+          description: The input string whose vowels should be counted.
+        vowelsToUse:
+          type: array
+          items:
+            type: string
+          description: An array of characters to use in the vowel-counting logic
+          nullable: true
+    Count:
+      description: The result of counting vowels on the Vowels input.
+      properties:
+        vowelsCounted:
+          type: integer
+          format: int32
