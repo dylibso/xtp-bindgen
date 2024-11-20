@@ -5,10 +5,11 @@ XTP Bindgen is an open source framework to generate PDK bindings for
 [XTP Platform](https://www.getxtp.com/), but can be used outside of the platform
 to define any Extism compatible plug-in system.
 
-This repository hosts the core schema parser and validation code, and is not
-meant for typical day-to-day use. Instead, you should use the `xtp` CLI to
-generate bindings from an
-[XTP Schema](https://docs.xtp.dylibso.com/docs/concepts/xtp-schema).
+> Note: This repository hosts the core schema parser and validation code, and is
+> not meant for typical day-to-day use. Instead, you should use the
+> [`xtp` CLI]((https://docs.xtp.dylibso.com/docs/cli#installation)) to generate
+> bindings from an
+> [XTP Schema](https://docs.xtp.dylibso.com/docs/concepts/xtp-schema).
 
 ## Quickstart
 
@@ -24,15 +25,17 @@ version: v1-draft
 exports: 
   CountVowels:
       input: 
-          $ref: "#/components/schemas/Vowels"
-          contentType: application/json
+          type: string
+          contentType: text/plain; charset=utf-8
       output:
-          $ref: "#/components/schemas/Count"
+          $ref: "#/components/schemas/VowelReport"
           contentType: application/json
-# ...
+# components.schemas defined in example-schema.yaml...
 ```
 
-> See an example in [example-schema.yaml](./example-schema.yaml)
+> See an example in [example-schema.yaml](./example-schema.yaml), or a full
+> "kitchen sink" example on
+> [the docs page](https://docs.xtp.dylibso.com/docs/concepts/xtp-schema/).
 
 ### 3. Generate bindings to use from your plugins:
 
@@ -50,7 +53,8 @@ xtp plugin init --schema-file ./example-schema.yaml
 ```
 
 This will create an entire boilerplate plugin project for you to get started
-with.
+with. Implement the empty function(s), and run `xtp plugin build` to compile
+your plugin.
 
 ## How Does It Work?
 
@@ -96,6 +100,9 @@ xtp plugin init \
 You can point to a bindgen template on github or directly to a bindgen bundle.
 
 ## How Do I Write A Bindgen?
+
+> We recommended that you use any of the existing bindgens as a starting point
+> for writing your own bindgen.
 
 A bindgen is simply a zip file with the following attributes:
 

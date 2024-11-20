@@ -4,28 +4,25 @@ version: v1-draft
 exports: 
   CountVowels:
       input: 
-          $ref: "#/components/schemas/Vowels"
-          contentType: application/json
+          type: string
+          contentType: text/plain; charset=utf-8
       output:
-          $ref: "#/components/schemas/Count"
+          $ref: "#/components/schemas/VowelReport"
           contentType: application/json
 components:
   schemas:
-    Vowels:
-      description: The incoming vowel set and string to count vowels within.
-      properties:
-        content: 
-          type: string
-          description: The input string whose vowels should be counted.
-        vowelsToUse:
-          type: array
-          items:
-            type: string
-          description: An array of characters to use in the vowel-counting logic
-          nullable: true
-    Count:
+    VowelReport:
       description: The result of counting vowels on the Vowels input.
       properties:
-        vowelsCounted:
+        count:
           type: integer
           format: int32
+          description: The count of vowels for input string.
+        total:
+          type: integer
+          format: int32
+          description: The cumulative amount of vowels counted, if this keeps state across multiple function calls.
+          nullable: true
+        vowels:
+          type: string
+          description: The set of vowels used to get the count, e.g. "aAeEiIoOuU"
