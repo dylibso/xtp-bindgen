@@ -117,6 +117,9 @@ function isBuffer(p: XtpTyped): boolean {
 function isObject(p: XtpTyped): boolean {
   return p?.xtpType?.kind === "object"
 }
+function isUntypedObject(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "jsobject"
+}
 function isArray(p: XtpTyped): boolean {
   return p?.xtpType?.kind === "array"
 }
@@ -173,6 +176,7 @@ export const helpers = {
   isPrimitive,
   isBuffer,
   isObject,
+  isUntypedObject,
   isEnum,
   isArray,
   isString,

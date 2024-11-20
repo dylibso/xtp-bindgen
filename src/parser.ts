@@ -80,7 +80,7 @@ class V1Validator {
       /^#\/exports$/, // allow defining exports named `type` or `format`
       /^#\/imports$/ // allow defining imports named `type` or `format`
     ]
-    
+
     const shouldValidate = skipPatterns.none(pattern => pattern.test(currentPath))
     if (shouldValidate) {
       this.validateTypedInterface(node)
@@ -207,7 +207,7 @@ export interface Schema extends XtpTyped {
 
 export type XtpType =
   'integer' | 'string' | 'number' | 'boolean' | 'object' |
-  'array' | 'buffer' | 'object' | 'enum' | 'map';
+  'array' | 'buffer' | 'enum' | 'map';
 export type XtpFormat =
   'int32' | 'int64' | 'float' | 'double' | 'date-time' | 'byte';
 
