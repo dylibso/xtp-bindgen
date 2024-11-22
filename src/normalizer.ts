@@ -255,7 +255,6 @@ class V1SchemaNormalizer {
           schema.name = name
           schema.properties = properties
           this.schemas[name] = schema
-
         } finally {
           this.location.pop();
         }

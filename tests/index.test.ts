@@ -214,6 +214,23 @@ test('parse-v1-invalid-identifiers-doc', () => {
   }
 })
 
+test('parse-v1-additional-props-doc', () => {
+  const invalidV1Doc: any = yaml.load(fs.readFileSync('./tests/schemas/v1-invalid-additional-properties.yaml', 'utf8'))
+  try {
+    parse(JSON.stringify(invalidV1Doc))
+    expect(true).toBe('should have thrown')
+  } catch (e) {
+    const expectedErrors = [
+      {
+        message: 'We currently do not support objects with both fixed properties and additionalProperties',
+        path: '#/components/schemas/MixedObject'
+      },
+    ]
+
+    expectErrors(e, expectedErrors)
+  }
+})
+
 function expectErrors(e: any, expectedErrors: ValidationError[]) {
   if (e instanceof NormalizeError) {
     const sortByPath = (a: ValidationError, b: ValidationError) => a.path.localeCompare(b.path);

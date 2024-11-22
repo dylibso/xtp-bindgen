@@ -137,6 +137,12 @@ class V1Validator {
       }
     }
 
+    if ('properties' in prop && Object.keys(prop.properties!).length > 0) {
+      if (prop.additionalProperties) {
+        this.recordError('We currently do not support objects with both fixed properties and additionalProperties')
+      }
+    }
+
     if (prop.items) this.validateTypedInterface(prop.items)
     if (prop.additionalProperties) this.validateTypedInterface(prop.additionalProperties)
   }
