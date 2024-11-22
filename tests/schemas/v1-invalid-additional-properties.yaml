@@ -1,0 +1,14 @@
+---
+version: v1-draft
+exports:
+  hello: {}
+components:
+  schemas:
+    MixedObject:
+      description: should not allow mixing fixed and additional props for now
+      properties:
+        hello:
+          type: string
+      additionalProperties:
+        type: string
+
