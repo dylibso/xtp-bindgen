@@ -352,7 +352,7 @@ class V1SchemaNormalizer {
           properties.push(t)
         }
       }
-      return new ObjectType(s.name || '', properties, s)
+      return new ObjectType(s.name!, properties, s)
     }
 
     if (s.$ref) {
