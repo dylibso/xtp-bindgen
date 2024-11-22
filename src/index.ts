@@ -129,8 +129,26 @@ function isEnum(p: XtpTyped): boolean {
 function isString(p: XtpTyped): boolean {
   return p?.xtpType?.kind === "string"
 }
+function isUInt8(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "uint8"
+}
+function isInt8(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "int8"
+}
+function isUInt16(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "uint16"
+}
+function isInt16(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "int16"
+}
+function isUInt32(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "uint32"
+}
 function isInt32(p: XtpTyped): boolean {
   return p?.xtpType?.kind === "int32"
+}
+function isUInt64(p: XtpTyped): boolean {
+  return p?.xtpType?.kind === "uint64"
 }
 function isInt64(p: XtpTyped): boolean {
   return p?.xtpType?.kind === "int64"
@@ -180,7 +198,13 @@ export const helpers = {
   isEnum,
   isArray,
   isString,
+  isUInt8,
+  isInt8,
+  isUInt16,
+  isInt16,
+  isUInt32,
   isInt32,
+  isUInt64,
   isInt64,
   isFloat,
   isDouble,
