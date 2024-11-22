@@ -80,7 +80,7 @@ class V1Validator {
       /^#\/exports$/, // allow defining exports named `type` or `format`
       /^#\/imports$/ // allow defining imports named `type` or `format`
     ]
-    
+
     const shouldValidate = skipPatterns.none(pattern => pattern.test(currentPath))
     if (shouldValidate) {
       this.validateTypedInterface(node)
@@ -134,6 +134,13 @@ class V1Validator {
 
       if (!validFormats.includes(prop.format)) {
         this.recordError(`Invalid format ${stringify(prop.format)} for type ${stringify(prop.type)}. Valid formats are: [${validFormats.join(', ')}]`)
+      }
+    }
+
+    // TODO consider adding properties to XtpTyped when we support inlining objects
+    if ('properties' in prop && Object.keys(prop.properties!).length > 0) {
+      if (prop.additionalProperties) {
+        this.recordError('We currently do not support objects with both fixed properties and additionalProperties')
       }
     }
 
