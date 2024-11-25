@@ -60,6 +60,7 @@ class V1Validator {
    */
   validate(): ValidationError[] {
     this.errors = []
+    this.validateRootNames()
     this.validateNode(this.doc)
     return this.errors
   }
@@ -103,16 +104,36 @@ class V1Validator {
     }
   }
 
-  recordError(msg: string) {
+  /**
+   * Validates the root names of the doc.
+   * We just do this by hand as it's tricky to do recursively
+   */
+  validateRootNames() {
+    const exports = this.doc.exports || {}
+    for (const n in exports) {
+      this.validateIdentifier(n, ['exports', n])
+    }
+    const imports = this.doc.imports || {}
+    for (const n in imports) {
+      this.validateIdentifier(n, ['imports', n])
+    }
+    const schemas = this.doc.components?.schemas || {}
+    for (const n in schemas) {
+      this.validateIdentifier(n, ['components', 'schemas', n])
+    }
+  }
+
+  recordError(msg: string, suffix?: Array<string>) {
+    const path = this.getLocation(suffix)
     this.errors.push(
-      new ValidationError(msg, this.getLocation())
+      new ValidationError(msg, path)
     )
   }
 
   /**
    * Validates that a node conforms to the rules of
-   * the XtpTyped interface. Validates what we can't
-   * catch in JSON Schema validation.
+   * the XtpTyped interface. These validations catch a lot of
+   * what we can't catch in JSON Schema validation.
    */
   validateTypedInterface(prop?: XtpTyped): void {
     if (!prop) return
@@ -138,18 +159,69 @@ class V1Validator {
     }
 
     // TODO consider adding properties to XtpTyped when we support inlining objects
+    // for now we'll use the presence of `properties` as a hint to cast to Schema
     if ('properties' in prop && Object.keys(prop.properties!).length > 0) {
-      if (prop.additionalProperties) {
+      const schema = prop as Schema
+      // check for mixing of additional and fixed props
+      if (schema.additionalProperties) {
         this.recordError('We currently do not support objects with both fixed properties and additionalProperties')
+      }
+
+      // validate the required array
+      if (schema.required) {
+        for (const name of schema.required) {
+          if (!schema.properties?.[name]) {
+            this.recordError(`Property ${name} is marked as required but not defined`);
+          }
+        }
+      }
+
+      // validate the property names
+      for (const name in schema.properties) {
+        this.validateIdentifier(name, ['properties', name])
+      }
+    }
+
+    // validate enum items if they exists
+    if (prop.enum) {
+      for (const item of prop.enum) {
+        if (typeof item !== 'string') {
+          this.recordError(`Enum item must be a string: ${item}`);
+        }
+        this.validateIdentifier(item, ['enum']);
       }
     }
 
     if (prop.items) this.validateTypedInterface(prop.items)
     if (prop.additionalProperties) this.validateTypedInterface(prop.additionalProperties)
+
+    // if we have a $ref, validate it
+    if (prop.$ref) {
+      const parts = prop.$ref.split('/')
+      // for now we can only link to schemas
+      // TODO we should be able to link to any valid type in the future
+      if (parts[0] === '#' && parts[1] === 'components' && parts[2] === 'schemas') {
+        const name = parts[3]
+        const schemas = this.doc.components?.schemas || {}
+        const s = schemas[name]
+        if (!s) {
+          const availableSchemas = Object.keys(schemas).join(', ')
+          this.recordError(`Invalid $ref "${prop.$ref}". Cannot find schema "${name}". Options are: [${availableSchemas}]`, ['$ref']);
+        }
+      } else {
+        this.recordError(`Invalid $ref "${prop.$ref}"`, ['$ref'])
+      }
+    }
   }
 
-  getLocation(): string {
-    return this.location.join('/')
+  validateIdentifier(name: string, path?: string[]) {
+    if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
+      this.recordError(`Invalid identifier: "${name}". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/`, path);
+    }
+  }
+
+  getLocation(suffix: string[] = []): string {
+    return this.location.concat(suffix).join('/')
   }
 }
 

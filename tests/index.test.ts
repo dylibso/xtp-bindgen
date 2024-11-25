@@ -89,30 +89,30 @@ test('parse-v1-invalid-document', () => {
     expect(true).toBe('should have thrown')
   } catch (e) {
     const expectedErrors = [
-      {
-        message: 'Invalid format date-time for type buffer. Valid formats are: []',
-        path: '#/exports/invalidFunc1/input'
-      },
-      {
-        message: 'Invalid format float for type string. Valid formats are: [date-time, byte]',
-        path: '#/exports/invalidFunc1/output'
-      },
-      {
-        message: 'Invalid format date-time for type boolean. Valid formats are: []',
-        path: '#/components/schemas/ComplexObject/properties/aBoolean'
-      },
-      {
-        message: 'Invalid format int32 for type string. Valid formats are: [date-time, byte]',
-        path: '#/components/schemas/ComplexObject/properties/aString'
-      },
-      {
-        message: 'Invalid format date-time for type integer. Valid formats are: [int32, int64]',
-        path: '#/components/schemas/ComplexObject/properties/anInt'
-      },
-      {
-        message: "Invalid type 'non'. Options are: ['string', 'number', 'integer', 'boolean', 'object', 'array', 'buffer']",
-        path: '#/components/schemas/ComplexObject/properties/aNonType'
-      }
+      new ValidationError(
+        'Invalid format date-time for type buffer. Valid formats are: []',
+        '#/exports/invalidFunc1/input'
+      ),
+      new ValidationError(
+        'Invalid format float for type string. Valid formats are: [date-time, byte]',
+        '#/exports/invalidFunc1/output'
+      ),
+      new ValidationError(
+        'Invalid format date-time for type boolean. Valid formats are: []',
+        '#/components/schemas/ComplexObject/properties/aBoolean'
+      ),
+      new ValidationError(
+        'Invalid format int32 for type string. Valid formats are: [date-time, byte]',
+        '#/components/schemas/ComplexObject/properties/aString'
+      ),
+      new ValidationError(
+        'Invalid format date-time for type integer. Valid formats are: [int32, int64]',
+        '#/components/schemas/ComplexObject/properties/anInt'
+      ),
+      new ValidationError(
+        "Invalid type 'non'. Options are: ['string', 'number', 'integer', 'boolean', 'object', 'array', 'buffer']",
+        '#/components/schemas/ComplexObject/properties/aNonType'
+      ),
     ]
 
     expectErrors(e, expectedErrors)
@@ -126,26 +126,26 @@ test('parse-v1-invalid-ref-document', () => {
     expect(true).toBe('should have thrown')
   } catch (e) {
     const expectedErrors = [
-      {
-        message: 'Invalid reference #/components/schemas/NonExistentExportInputRef. Cannot find schema NonExistentExportInputRef. Options are: [ComplexObject]',
-        path: '#/exports/invalidFunc/input/$ref'
-      },
-      {
-        message: 'Invalid reference #/components/schemas/NonExistentImportOutputRef. Cannot find schema NonExistentImportOutputRef. Options are: [ComplexObject]',
-        path: '#/imports/invalidImport/output/$ref'
-      },
-      {
-        message: 'Invalid reference #/components/schemas/NonExistentPropertyRef. Cannot find schema NonExistentPropertyRef. Options are: [ComplexObject]',
-        path: '#/components/schemas/ComplexObject/properties/invalidPropRef/$ref'
-      },
-      {
-        message: 'Not a valid ref some invalid ref',
-        path: '#/exports/invalidFunc/output/$ref'
-      },
-      {
-        message: "Property ghost is required but not defined",
-        path: "#/components/schemas/ComplexObject/required"
-      }
+      new ValidationError(
+        'Property ghost is marked as required but not defined',
+        '#/components/schemas/ComplexObject'
+      ),
+      new ValidationError(
+        'Invalid $ref "#/components/schemas/NonExistentExportInputRef". Cannot find schema "NonExistentExportInputRef". Options are: [ComplexObject]',
+        '#/exports/invalidFunc/input/$ref'
+      ),
+      new ValidationError(
+        'Invalid $ref "#/components/schemas/NonExistentImportOutputRef". Cannot find schema "NonExistentImportOutputRef". Options are: [ComplexObject]',
+        '#/imports/invalidImport/output/$ref'
+      ),
+      new ValidationError(
+        'Invalid $ref "#/components/schemas/NonExistentPropertyRef". Cannot find schema "NonExistentPropertyRef". Options are: [ComplexObject]',
+        '#/components/schemas/ComplexObject/properties/invalidPropRef/$ref'
+      ),
+      new ValidationError(
+        'Invalid $ref "some invalid ref"',
+        '#/exports/invalidFunc/output/$ref'
+      ),
     ]
 
     expectErrors(e, expectedErrors)
@@ -177,38 +177,38 @@ test('parse-v1-invalid-identifiers-doc', () => {
     expect(true).toBe('should have thrown')
   } catch (e) {
     const expectedErrors = [
-      {
-        message: 'Invalid identifier: "Ghost)Gang". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
-        path: '#/components/schemas/Ghost)Gang'
-      },
-      {
-        message: 'Invalid identifier: "gh ost". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
-        path: '#/components/schemas/ComplexObject/properties/gh ost'
-      },
-      {
-        message: 'Invalid identifier: "aBoo{lean". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
-        path: '#/components/schemas/ComplexObject/properties/aBoo{lean'
-      },
-      {
-        message: 'Invalid identifier: "spooky ghost". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
-        path: '#/components/schemas/Ghost)Gang/enum'
-      },
-      {
-        message: 'Invalid identifier: "invalid@Func". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
-        path: '#/exports/invalid@Func'
-      },
-      {
-        message: 'Invalid identifier: "invalid invalid". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
-        path: '#/exports/invalid invalid'
-      },
-      {
-        message: 'Invalid identifier: "referenc/eTypeFunc". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
-        path: '#/exports/referenc/eTypeFunc'
-      },
-      {
-        message: 'Invalid identifier: "eatA:Fruit". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
-        path: '#/imports/eatA:Fruit'
-      }
+      new ValidationError(
+        'Invalid identifier: "Ghost)Gang". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        '#/components/schemas/Ghost)Gang'
+      ),
+      new ValidationError(
+        'Invalid identifier: "gh ost". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        '#/components/schemas/ComplexObject/properties/gh ost'
+      ),
+      new ValidationError(
+        'Invalid identifier: "aBoo{lean". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        '#/components/schemas/ComplexObject/properties/aBoo{lean'
+      ),
+      new ValidationError(
+        'Invalid identifier: "spooky ghost". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        '#/components/schemas/Ghost)Gang/enum'
+      ),
+      new ValidationError(
+        'Invalid identifier: "invalid@Func". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        '#/exports/invalid@Func'
+      ),
+      new ValidationError(
+        'Invalid identifier: "invalid invalid". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        '#/exports/invalid invalid'
+      ),
+      new ValidationError(
+        'Invalid identifier: "referenc/eTypeFunc". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        '#/exports/referenc/eTypeFunc'
+      ),
+      new ValidationError(
+        'Invalid identifier: "eatA:Fruit". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/',
+        '#/imports/eatA:Fruit'
+      ),
     ]
 
     expectErrors(e, expectedErrors)
