@@ -16,7 +16,7 @@ import {
   DoubleType,
   BooleanType,
   BufferType,
-  UntypedObjectType
+  FreeFormObjectType
 } from "./types"
 
 export interface XtpTyped extends parser.XtpTyped {
@@ -414,7 +414,7 @@ class V1SchemaNormalizer {
         // default to double
         return new DoubleType(s)
       case 'object':
-        return new UntypedObjectType(s)
+        return new FreeFormObjectType(s)
     }
 
     // if we get this far, we don't know what

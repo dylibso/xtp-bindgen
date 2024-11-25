@@ -100,7 +100,7 @@ export class ObjectType implements XtpNormalizedType {
   }
 }
 
-export class UntypedObjectType implements XtpNormalizedType {
+export class FreeFormObjectType implements XtpNormalizedType {
   kind: XtpNormalizedKind = 'jsobject';
 
   constructor(opts?: XtpTypeOpts) {
