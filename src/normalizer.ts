@@ -24,6 +24,8 @@ import {
   BufferType,
   FreeFormObjectType
 } from "./types"
+import JSON_SCHEMA from "../schema.json"
+import Ajv from "ajv";
 
 export interface XtpTyped extends parser.XtpTyped {
   description?: string;
@@ -392,8 +394,30 @@ function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
   return schema
 }
 
-export function parseAndNormalizeJson(encoded: string): XtpSchema {
-  const doc = parser.parseAny(JSON.parse(encoded))
+export function parseAndNormalize(rawDoc: any): XtpSchema {
+  const errors: ValidationError[] = []
+  const warnings: ValidationError[] = []
+
+  const ajv = new Ajv();
+  const validate = ajv.compile(JSON_SCHEMA);
+
+  if (!validate(rawDoc)) {
+    errors.push(...validate.errors!.map((error) => {
+      const err = new ValidationError(
+        error.instancePath ? error.instancePath : "#",
+        error.message!,
+      )
+
+      if (!err.path) {
+        err.path = "#";
+      }
+
+      return err;
+    }))
+  }
+  assert({ errors, warnings })
+
+  const doc = parser.parseAny(rawDoc)
   assert(doc)
 
   if (parser.isV0Schema(doc)) {
@@ -406,6 +430,7 @@ export function parseAndNormalizeJson(encoded: string): XtpSchema {
       path: '#/version',
     }])
   }
+
 }
 
 function assert(results: parser.ParseResults): any {

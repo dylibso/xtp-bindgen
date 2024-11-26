@@ -2,7 +2,7 @@ import Ajv from "ajv";
 import { SchemaValidationLog, SchemaValidationResult } from "./pdk";
 import YAML from "js-yaml";
 import JSON_SCHEMA from "BUILTIN_JSON_SCHEMA";
-import { parse, XtpSchema, NormalizeError } from "@dylibso/xtp-bindgen";
+import { parseYaml, XtpSchema, NormalizeError } from "@dylibso/xtp-bindgen";
 
 /**
  * Retrieves the JSON schema used for validation
@@ -38,36 +38,10 @@ export function has_importsImpl(input: string): string {
  * @returns {SchemaValidationResult}
  */
 export function validate_schemaImpl(input: string): SchemaValidationResult {
-  const yaml = YAML.load(input);
-
-  const ajv = new Ajv();
-  const validate = ajv.compile(JSON_SCHEMA);
-  if (!validate(yaml)) {
-    const errors = validate.errors!.map((error) => {
-      const err = {
-        path: error.instancePath ? error.instancePath : "#",
-        message: error.message!,
-      };
-
-      if (!err.path) {
-        err.path = "#";
-      }
-
-      return err;
-    });
-
-    return {
-      valid: false,
-      errors: errors,
-      warnings: [],
-    };
-  }
-
-  const schema = parseSchema(yaml);
+  const schema = parseSchema(input);
 
   const warnings: SchemaValidationLog[] = [];
-
-  const version = (yaml as any).version;
+  const version = (input as any).version;
   if (version && version.endsWith("-draft")) {
     warnings.push({
       message: `Version ${version} is a draft version and may be exposed to breaking changes until we publish the final version. See XTP docs for more info https://docs.xtp.dylibso.com/docs/concepts/xtp-schema#versioning`,
@@ -93,8 +67,7 @@ export function validate_schemaImpl(input: string): SchemaValidationResult {
 
 function parseSchema(schema: any): XtpSchema | NormalizeError {
   try {
-    const json = JSON.stringify(schema);
-    return parse(json);
+    return parseYaml(schema);
   } catch (e) {
     if (e instanceof NormalizeError) {
       return e;

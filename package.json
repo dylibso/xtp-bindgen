@@ -30,5 +30,11 @@
   ],
   "keywords": [],
   "author": "Dylibso, Inc.",
-  "license": "BSD-3-Clause"
+  "license": "BSD-3-Clause",
+  "dependencies": {
+    "ajv": "^8.17.1"
+  },
+  "overrides": {
+    "fast-uri": "github:dylibso/fast-uri#remove-unicode-flags-from-regex"
+  }
 }
