@@ -119,7 +119,7 @@ test('parse-v1-invalid-document', () => {
         '#/components/schemas/ComplexObject/properties/aString'
       ),
       new ValidationError(
-        'Invalid format date-time for type integer. Valid formats are: [int32, int64]',
+        'Invalid format date-time for type integer. Valid formats are: [uint8, int8, uint16, int16, uint32, int32, uint64, int64]',
         '#/components/schemas/ComplexObject/properties/anInt'
       ),
       new ValidationError(
