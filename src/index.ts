@@ -118,7 +118,7 @@ function isObject(p: XtpTyped): boolean {
   return p?.xtpType?.kind === "object"
 }
 function isFreeFormObject(p: XtpTyped): boolean {
-  return p?.xtpType?.kind === "jsobject"
+  return p?.xtpType?.kind === "free-form-object"
 }
 function isArray(p: XtpTyped): boolean {
   return p?.xtpType?.kind === "array"

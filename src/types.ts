@@ -8,7 +8,7 @@ export type XtpNormalizedKind =
   'uint8' | 'int8' | 'uint16' | 'int16' |
   'uint32' | 'int32' | 'uint64' | 'int64' | 'float' | 'double' |
   'boolean' | 'date-time' | 'buffer' |
-  'jsobject'
+  'free-form-object'
 
 
 // applies type opts to a type on construction
@@ -137,7 +137,7 @@ export class ObjectType implements XtpNormalizedType {
 }
 
 export class FreeFormObjectType implements XtpNormalizedType {
-  kind: XtpNormalizedKind = 'jsobject';
+  kind: XtpNormalizedKind = 'free-form-object';
 
   constructor(opts?: XtpTypeOpts) {
     cons(this, opts)
