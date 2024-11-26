@@ -7,7 +7,7 @@ export type XtpNormalizedKind =
   'object' | 'enum' | 'map' | 'array' | 'string' |
   'uint8' | 'int8' | 'uint16' | 'int16' |
   'uint32' | 'int32' | 'uint64' | 'int64' | 'float' | 'double' |
-  'boolean' | 'date-time' | 'byte' | 'buffer' |
+  'boolean' | 'date-time' | 'buffer' |
   'jsobject'
 
 
@@ -105,13 +105,6 @@ export class DoubleType implements XtpNormalizedType {
 
 export class BooleanType implements XtpNormalizedType {
   kind: XtpNormalizedKind = 'boolean';
-  constructor(opts?: XtpTypeOpts) {
-    cons(this, opts)
-  }
-}
-
-export class ByteType implements XtpNormalizedType {
-  kind: XtpNormalizedKind = 'byte';
   constructor(opts?: XtpTypeOpts) {
     cons(this, opts)
   }
