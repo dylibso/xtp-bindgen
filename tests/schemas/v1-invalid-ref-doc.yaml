@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://xtp.dylibso.com/assets/wasm/schema.json
 ---
 version: v1-draft
 exports:
@@ -15,6 +16,7 @@ imports:
       This is a host function. Right now host functions can only be the type (i64) -> i64.
       We will support more in the future. Much of the same rules as exports apply.
     input:
+      contentType: text/plain; charset=utf-8
       type: string
     output:
       contentType: application/json

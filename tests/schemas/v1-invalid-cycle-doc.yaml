@@ -1,9 +1,11 @@
+# yaml-language-server: $schema=https://xtp.dylibso.com/assets/wasm/schema.json
 ---
 version: v1-draft
 exports:
   export1:
     description: This is an export
     input:
+      contentType: application/json
       type: string
     output:
       contentType: application/json
