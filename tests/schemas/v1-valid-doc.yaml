@@ -112,6 +112,30 @@ components:
         anUntypedObject:
           description: An untyped object with no properties
           type: object
+        aByte:
+          type: integer
+          format: uint8
+          description: An uint8 prop
+        aSByte:
+          type: integer
+          format: int8
+          description: An int8 prop
+        aUShort:
+          type: integer
+          format: uint16
+          description: An uint16 prop
+        aShort:
+          type: integer
+          format: int16
+          description: An uint16 prop
+        aUInt:
+          type: integer
+          format: uint32
+          description: An uint32 prop
+        aUInt64:
+          type: integer
+          format: uint64
+          description: An uint64 prop
         kind:
           type: string
           description: An enum prop

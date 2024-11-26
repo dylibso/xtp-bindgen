@@ -1,5 +1,5 @@
 import { parse, helpers, MapType, ArrayType, NormalizeError, ValidationError, ObjectType, FreeFormObjectType } from '../src/index';
-const { isBoolean, isObject, isString, isEnum, isDateTime, isInt32, isInt64, isMap, isFreeFormObject } = helpers;
+const { isBoolean, isObject, isString, isEnum, isDateTime, isUInt8, isInt8, isUInt16, isInt16, isUInt32, isInt32, isUInt64, isInt64, isMap, isFreeFormObject } = helpers;
 import * as yaml from 'js-yaml'
 import * as fs from 'fs'
 
@@ -65,6 +65,20 @@ test('parse-v1-document', () => {
 
   // untyped object
   expect(isFreeFormObject(properties[8])).toBe(true)
+
+  // extended int types
+  expect(isUInt8(properties[9])).toBe(true)
+  expect(properties[9].required).toBe(false)
+  expect(isInt8(properties[10])).toBe(true)
+  expect(properties[10].required).toBe(false)
+  expect(isUInt16(properties[11])).toBe(true)
+  expect(properties[11].required).toBe(false)
+  expect(isInt16(properties[12])).toBe(true)
+  expect(properties[12].required).toBe(false)
+  expect(isUInt32(properties[13])).toBe(true)
+  expect(properties[13].required).toBe(false)
+  expect(isUInt64(properties[14])).toBe(true)
+  expect(properties[14].required).toBe(false)
 
   // proves we derferenced it
   expect(properties[0].$ref?.enum).toStrictEqual(validV1Doc.components.schemas['GhostGang'].enum)

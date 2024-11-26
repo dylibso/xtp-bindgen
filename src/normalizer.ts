@@ -10,7 +10,13 @@ import {
   XtpNormalizedType,
   StringType, ObjectType, EnumType, ArrayType, MapType,
   DateTimeType,
+  UInt8Type,
+  Int8Type,
+  UInt16Type,
+  Int16Type,
+  UInt32Type,
   Int32Type,
+  UInt64Type,
   Int64Type,
   FloatType,
   DoubleType,
@@ -344,7 +350,13 @@ class V1SchemaNormalizer {
       case 'string':
         return s.format === 'date-time' ? new DateTimeType(s) : new StringType(s)
       case 'integer':
+        if (s.format === 'uint8') return new UInt8Type(s)
+        if (s.format === 'int8') return new Int8Type(s)
+        if (s.format === 'uint16') return new UInt16Type(s)
+        if (s.format === 'int16') return new Int16Type(s)
+        if (s.format === 'uint32') return new UInt32Type(s)
         if (s.format === 'int32') return new Int32Type(s)
+        if (s.format === 'uint64') return new UInt64Type(s)
         // default to int64
         return new Int64Type(s)
       case 'boolean':

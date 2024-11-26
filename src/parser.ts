@@ -151,7 +151,8 @@ class V1Validator {
       } else if (prop.type === 'number') {
         validFormats = ['float', 'double'];
       } else if (prop.type === 'integer') {
-        validFormats = ['int32', 'int64'];
+        validFormats = ['uint8', 'int8', 'uint16', 'int16', 'uint32', 'int32',
+          'uint64', 'int64'];
       }
 
       if (!validFormats.includes(prop.format)) {
@@ -303,8 +304,8 @@ export type XtpType =
   'integer' | 'string' | 'number' | 'boolean' | 'object' |
   'array' | 'buffer' | 'enum';
 export type XtpFormat =
-  'int32' | 'int64' | 'float' | 'double' | 'date-time' | 'byte';
-
+  'uint8' | 'int8' | 'uint16' | 'int16' | 'uint32' | 'int32' |
+  'uint64' | 'int64' | 'float' | 'double' | 'date-time' | 'byte'
 
 // Shared interface for any place you can
 // define some types inline. Ex: Schema, Property, Parameter

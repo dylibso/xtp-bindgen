@@ -5,9 +5,10 @@
 
 export type XtpNormalizedKind =
   'object' | 'enum' | 'map' | 'array' | 'string' |
-  'int32' | 'int64' | 'float' | 'double' |
-  'boolean' | 'date-time' | 'byte' | 'buffer' |
-  'jsobject'
+  'uint8' | 'int8' | 'uint16' | 'int16' |
+  'uint32' | 'int32' | 'uint64' | 'int64' | 'float' | 'double' |
+  'boolean' | 'date-time' | 'buffer' |
+  'free-form-object'
 
 
 // applies type opts to a type on construction
@@ -32,8 +33,50 @@ export class StringType implements XtpNormalizedType {
   }
 }
 
+export class UInt8Type implements XtpNormalizedType {
+  kind: XtpNormalizedKind = 'uint8';
+  constructor(opts?: XtpTypeOpts) {
+    cons(this, opts)
+  }
+}
+
+export class Int8Type implements XtpNormalizedType {
+  kind: XtpNormalizedKind = 'int8';
+  constructor(opts?: XtpTypeOpts) {
+    cons(this, opts)
+  }
+}
+
+export class UInt16Type implements XtpNormalizedType {
+  kind: XtpNormalizedKind = 'uint16';
+  constructor(opts?: XtpTypeOpts) {
+    cons(this, opts)
+  }
+}
+
+export class Int16Type implements XtpNormalizedType {
+  kind: XtpNormalizedKind = 'int16';
+  constructor(opts?: XtpTypeOpts) {
+    cons(this, opts)
+  }
+}
+
+export class UInt32Type implements XtpNormalizedType {
+  kind: XtpNormalizedKind = 'uint32';
+  constructor(opts?: XtpTypeOpts) {
+    cons(this, opts)
+  }
+}
+
 export class Int32Type implements XtpNormalizedType {
   kind: XtpNormalizedKind = 'int32';
+  constructor(opts?: XtpTypeOpts) {
+    cons(this, opts)
+  }
+}
+
+export class UInt64Type implements XtpNormalizedType {
+  kind: XtpNormalizedKind = 'uint64';
   constructor(opts?: XtpTypeOpts) {
     cons(this, opts)
   }
@@ -67,13 +110,6 @@ export class BooleanType implements XtpNormalizedType {
   }
 }
 
-export class ByteType implements XtpNormalizedType {
-  kind: XtpNormalizedKind = 'byte';
-  constructor(opts?: XtpTypeOpts) {
-    cons(this, opts)
-  }
-}
-
 export class BufferType implements XtpNormalizedType {
   kind: XtpNormalizedKind = 'buffer';
   constructor(opts?: XtpTypeOpts) {
@@ -101,7 +137,7 @@ export class ObjectType implements XtpNormalizedType {
 }
 
 export class FreeFormObjectType implements XtpNormalizedType {
-  kind: XtpNormalizedKind = 'jsobject';
+  kind: XtpNormalizedKind = 'free-form-object';
 
   constructor(opts?: XtpTypeOpts) {
     cons(this, opts)
