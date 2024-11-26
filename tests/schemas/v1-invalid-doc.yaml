@@ -1,12 +1,15 @@
+# yaml-language-server: $schema=https://xtp.dylibso.com/assets/wasm/schema.json
 ---
 version: v1-draft
 exports:
   invalidFunc1:
     description: Has some invalid parameters
     input:
+      contentType: application/x-binary
       type: buffer
       format: date-time
     output:
+      contentType: text/plain; charset=utf-8
       type: string
       format: float
 components:

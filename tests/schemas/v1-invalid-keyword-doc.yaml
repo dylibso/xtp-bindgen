@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://xtp.dylibso.com/assets/wasm/schema.json
+---
+version: v1-draft
+exports:
+  "false":
+    description: |
+      This demonstrates how you can create an export with
+      no inputs or outputs.
+imports:
+  "true":
+    description: |
+      This is a host function.
+components:
+  schemas:
+    Break:
+      description: A complex json object
+      properties:
+        addrspace:
+          type: string
+        alignas:
+          type: string
+        abstract:
+          type: string
+        as:
+          type: string
+        and:
+          type: string
+        interface:
+          type: string
+        type:
+          type: string

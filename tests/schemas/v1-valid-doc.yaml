@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://xtp.dylibso.com/assets/wasm/schema.json
 ---
 version: v1-draft
 exports:
@@ -92,6 +93,7 @@ components:
           nullable: true
         aMap:
           description: a string map
+          type: object
           additionalProperties:
             type: string
         anIntRef:
@@ -99,7 +101,9 @@ components:
           $ref: "#/components/schemas/MyInt"
         aMapOfMapsOfNullableDateArrays:
           description: a weird map, it's too deep to cast correctly right now
+          type: object
           additionalProperties:
+            type: object
             additionalProperties:
               items:
                 nullable: true
@@ -132,7 +136,7 @@ components:
           type: integer
           format: uint64
           description: An uint64 prop
-        type:
+        kind:
           type: string
           description: An enum prop
           enum: [complex, simple]
@@ -150,6 +154,7 @@ components:
       description: an int as a schema
       type: integer
     MapSchema:
+      type: object
       additionalProperties:
         type: string
 

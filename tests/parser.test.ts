@@ -6,18 +6,17 @@ const invalidV1Doc: any = yaml.load(fs.readFileSync('./tests/schemas/v1-invalid-
 const validV1Doc: any = yaml.load(fs.readFileSync('./tests/schemas/v1-valid-doc.yaml', 'utf8'))
 
 test("parse-empty-v1-document", () => {
-  const { errors } = parseAny({})
-  expect(errors).toBeInstanceOf(Array)
+  const doc = parseAny({})
+  expect(doc.errors).toBeInstanceOf(Array)
 
-  expect(errors![0].path).toEqual("#/version")
+  expect(doc.errors![0].path).toEqual("#/version")
 })
 
 test("parse-invalid-v1-document", () => {
-  const { errors } = parseAny(invalidV1Doc)
-  expect(errors).toBeInstanceOf(Array)
+  const doc = parseAny(invalidV1Doc)
+  expect(doc.errors).toBeInstanceOf(Array)
 
-  const paths = errors!.map(e => e.path)
-  //console.log(JSON.stringify(errors!, null, 4))
+  const paths = doc.errors!.map(e => e.path)
   expect(paths).toStrictEqual([
     "#/exports/invalidFunc1/input",
     "#/exports/invalidFunc1/output",
@@ -25,16 +24,13 @@ test("parse-invalid-v1-document", () => {
     "#/components/schemas/ComplexObject/properties/aString",
     "#/components/schemas/ComplexObject/properties/anInt",
     "#/components/schemas/ComplexObject/properties/aNonType",
-    // "#/components/schemas/ComplexObject/properties/aMapOfMapsOfNullableDateArrays/additionalProperties",
-    // "#/components/schemas/ComplexObject/properties/aMapOfMapsOfNullableDateArrays/additionalProperties",
-    // "#/components/schemas/ComplexObject/properties/aMapOfMapsOfNullableDateArrays/additionalProperties/additionalProperties",
-    // "#/components/schemas/ComplexObject/properties/anArrayOfMaps/items",
   ])
 })
 
 test("parse-valid-v1-document", () => {
-  const { doc, errors } = parseAny(validV1Doc)
-  expect(errors).toStrictEqual([])
+  const doc = parseAny(validV1Doc)
+  expect(doc.errors).toStrictEqual([])
+  expect(doc.warnings).toStrictEqual([])
 
   const schema = doc as V1Schema
 

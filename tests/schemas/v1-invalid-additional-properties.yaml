@@ -1,9 +1,26 @@
+# yaml-language-server: $schema=https://xtp.dylibso.com/assets/wasm/schema.json
 ---
 version: v1-draft
 exports:
   hello: {}
 components:
   schemas:
+    ValidUse:
+      description: Valid use of additionalProperties
+      properties:
+        myMap:
+          type: object
+          additionalProperties:
+            type: string
+    NonObjectType:
+      description: should not additionalProperties if type !== object
+      properties:
+        hello:
+          type: string
+        myMap:
+          type: string
+          additionalProperties:
+            type: string
     MixedObject:
       description: should not allow mixing fixed and additional props for now
       properties:
