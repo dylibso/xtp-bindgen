@@ -1,8 +1,8 @@
 import Ajv from "ajv";
 import { SchemaValidationLog, SchemaValidationResult } from "./pdk";
 import YAML from "js-yaml";
-import JSON_SCHEMA from "BUILTIN_JSON_SCHEMA";
 import { parseYaml, XtpSchema, NormalizeError } from "@dylibso/xtp-bindgen";
+import JSON_SCHEMA from "../schema.json"
 
 /**
  * Retrieves the JSON schema used for validation
