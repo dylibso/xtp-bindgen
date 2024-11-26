@@ -16,6 +16,7 @@ import {
   DoubleType,
   BooleanType,
   BufferType,
+  FreeFormObjectType
 } from "./types"
 
 export interface XtpTyped extends parser.XtpTyped {
@@ -298,28 +299,24 @@ class V1SchemaNormalizer {
 
     if ((s.type && s.type === 'object')
       || (s.properties && s.properties.length > 0)) {
-
       s.type = 'object'
       const properties: XtpNormalizedType[] = []
-      if (s.properties) {
-        for (const pname in s.properties) {
-          const p = s.properties[pname]
-
-          const t = this.annotateType(p)
-          if (t) {
-            p.xtpType = t
-            properties.push(t)
-          }
+      for (const pname in s.properties) {
+        const p = s.properties[pname]
+        const t = this.annotateType(p)
+        if (t) {
+          p.xtpType = t
+          properties.push(t)
         }
-        return new ObjectType(s.name || '', properties, s)
-      } else {
-        // untyped object
-        return new ObjectType('', [], s)
       }
-
+      return new ObjectType(s.name!, properties, s)
     }
 
     if (s.$ref) {
+      // don't recurse if the type is known
+      if (s.type) {
+        return undefined
+      }
       // we're ovewriting this string $ref with the link to the
       // node that we find via query it may or may not have
       // been overwritten already
@@ -356,6 +353,8 @@ class V1SchemaNormalizer {
         if (s.format === 'float') return new FloatType(s)
         // default to double
         return new DoubleType(s)
+      case 'object':
+        return new FreeFormObjectType(s)
     }
 
     // if we get this far, we don't know what

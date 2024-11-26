@@ -301,7 +301,7 @@ export interface Schema extends XtpTyped {
 
 export type XtpType =
   'integer' | 'string' | 'number' | 'boolean' | 'object' |
-  'array' | 'buffer' | 'object' | 'enum' | 'map';
+  'array' | 'buffer' | 'enum';
 export type XtpFormat =
   'int32' | 'int64' | 'float' | 'double' | 'date-time' | 'byte';
 
