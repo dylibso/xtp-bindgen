@@ -291,14 +291,15 @@ class V1SchemaNormalizer {
     if (!s || typeof s !== 'object' || Array.isArray(s)) return undefined
     if (s.xtpType) return s.xtpType
 
+    // This pattern should be validated in the parser
     if (s.type && s.type === 'object' && s.additionalProperties) {
       s.type = 'map'
       const valueType = this.annotateType(s.additionalProperties)
       return valueType ? new MapType(valueType, s) : undefined
     }
 
-    if ((s.type && s.type === 'object')
-      || (s.properties && s.properties.length > 0)) {
+    // if we have properties, we should be able to assume it's an object
+    if (s.properties && s.properties.length > 0) {
       s.type = 'object'
       const properties: XtpNormalizedType[] = []
       for (const pname in s.properties) {
@@ -317,6 +318,7 @@ class V1SchemaNormalizer {
       if (s.type) {
         return undefined
       }
+
       // we're ovewriting this string $ref with the link to the
       // node that we find via query it may or may not have
       // been overwritten already
