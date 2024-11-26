@@ -16,6 +16,7 @@ import {
   DoubleType,
   BooleanType,
   BufferType,
+  FreeFormObjectType
 } from "./types"
 
 export interface XtpTyped extends parser.XtpTyped {
@@ -338,30 +339,27 @@ class V1SchemaNormalizer {
     if (!s || typeof s !== 'object' || Array.isArray(s)) return undefined
     if (s.xtpType) return s.xtpType
 
-    if ((s.type && s.type === 'object') ||
-      (s.properties && s.properties.length > 0)) {
-
+    if (s.properties && s.properties.length > 0) {
       s.type = 'object'
 
       const properties: XtpNormalizedType[] = []
-      if (s.properties) {
-        for (const pname in s.properties) {
-          const p = s.properties[pname]
+      for (const pname in s.properties) {
+        const p = s.properties[pname]
 
-          const t = this.annotateType(p, [...path, 'properties', p.name ?? pname])
-          if (t) {
-            p.xtpType = t
-            properties.push(t)
-          }
+        const t = this.annotateType(p, [...path, 'properties', p.name ?? pname])
+        if (t) {
+          p.xtpType = t
+          properties.push(t)
         }
-        return new ObjectType(s.name || '', properties, s)
-      } else {
-        // untyped object
-        return new ObjectType('', [], s)
       }
+      return new ObjectType(s.name!, properties, s)
     }
 
     if (s.$ref) {
+      // don't recurse if the type is known
+      if (s.type) {
+        return undefined
+      }
       let ref = s.$ref
       if (typeof s.$ref === 'string') {
         ref = this.querySchemaRef(s.$ref, [...path, '$ref'])
@@ -415,6 +413,8 @@ class V1SchemaNormalizer {
         if (s.format === 'float') return new FloatType(s)
         // default to double
         return new DoubleType(s)
+      case 'object':
+        return new FreeFormObjectType(s)
     }
 
     // if we get this far, we don't know what

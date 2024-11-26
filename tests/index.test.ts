@@ -1,5 +1,5 @@
-import { parse, helpers, MapType, ArrayType, NormalizeError, ValidationError, ObjectType } from '../src/index';
-const { isBoolean, isObject, isString, isEnum, isDateTime, isInt32, isInt64, isMap } = helpers;
+import { parse, helpers, MapType, ArrayType, NormalizeError, ValidationError, ObjectType, FreeFormObjectType } from '../src/index';
+const { isBoolean, isObject, isString, isEnum, isDateTime, isInt32, isInt64, isMap, isFreeFormObject } = helpers;
 import * as yaml from 'js-yaml'
 import * as fs from 'fs'
 
@@ -64,8 +64,7 @@ test('parse-v1-document', () => {
   expect(aType.elementType.nullable).toBe(true)
 
   // untyped object
-  expect(isObject(properties[8])).toBe(true)
-  expect((properties[8].xtpType as ObjectType).name).toBe("")
+  expect(isFreeFormObject(properties[8])).toBe(true)
 
   // proves we derferenced it
   expect(properties[0].$ref?.enum).toStrictEqual(validV1Doc.components.schemas['GhostGang'].enum)

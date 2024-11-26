@@ -6,7 +6,8 @@
 export type XtpNormalizedKind =
   'object' | 'enum' | 'map' | 'array' | 'string' |
   'int32' | 'int64' | 'float' | 'double' |
-  'boolean' | 'date-time' | 'byte' | 'buffer'
+  'boolean' | 'date-time' | 'byte' | 'buffer' |
+  'jsobject'
 
 
 // applies type opts to a type on construction
@@ -95,6 +96,14 @@ export class ObjectType implements XtpNormalizedType {
   constructor(name: string, properties: Array<XtpNormalizedType>, opts?: XtpTypeOpts) {
     this.name = name
     this.properties = properties
+    cons(this, opts)
+  }
+}
+
+export class FreeFormObjectType implements XtpNormalizedType {
+  kind: XtpNormalizedKind = 'jsobject';
+
+  constructor(opts?: XtpTypeOpts) {
     cons(this, opts)
   }
 }
