@@ -108,7 +108,7 @@ components:
         anUntypedObject:
           description: An untyped object with no properties
           type: object
-        type:
+        kind:
           type: string
           description: An enum prop
           enum: [complex, simple]

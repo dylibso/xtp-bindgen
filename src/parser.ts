@@ -5,31 +5,28 @@
  * of the raw format.
  */
 import { ValidationError } from "./common"
-
-export interface ParseResult {
-  doc?: VUnknownSchema;
-  errors?: ValidationError[];
-  warnings?: ValidationError[];
-}
+import { checkForKeyword } from "./keywords";
 
 /**
  * Parses and validates an untyped object into a V*Schema
  */
-export function parseAny(doc: any): ParseResult {
+export function parseAny(doc: any): VUnknownSchema {
   switch (doc.version) {
     case 'v0':
-      return { doc: doc as V0Schema }
+      const v0Doc = doc as V0Schema
+      v0Doc.errors = []
+      v0Doc.warnings = []
+      return v0Doc
     case 'v1-draft':
       const v1Doc = doc as V1Schema
       const validator = new V1Validator(v1Doc)
-      const errors = validator.validate()
-      return { doc: v1Doc, errors }
+      validator.validate()
+      return v1Doc
     default:
-      return {
-        errors: [
-          new ValidationError(`version property not valid: ${doc.version}`, "#/version")
-        ]
-      }
+      doc.errors = [
+        new ValidationError(`version property not valid: ${doc.version}`, "#/version")
+      ]
+      return doc
   }
 }
 
@@ -45,24 +42,21 @@ export function isV1Schema(schema?: VUnknownSchema): schema is V1Schema {
  * Validates a V1 document.
  */
 class V1Validator {
-  errors: ValidationError[]
-  location: string[]
+  location: string[] = ['#']
   doc: any
 
   constructor(doc: V1Schema) {
     this.doc = doc as any
-    this.errors = []
-    this.location = ['#']
   }
 
   /**
-   * Validate the document and return any errors
+   * Validate the document and sets any errors or warnings on the document
    */
-  validate(): ValidationError[] {
-    this.errors = []
+  validate() {
+    this.doc.errors = []
+    this.doc.warnings = []
     this.validateRootNames()
     this.validateNode(this.doc)
-    return this.errors
   }
 
   /**
@@ -125,7 +119,14 @@ class V1Validator {
 
   recordError(msg: string, suffix?: Array<string>) {
     const path = this.getLocation(suffix)
-    this.errors.push(
+    this.doc.errors.push(
+      new ValidationError(msg, path)
+    )
+  }
+
+  recordWarning(msg: string, suffix?: Array<string>) {
+    const path = this.getLocation(suffix)
+    this.doc.warnings.push(
       new ValidationError(msg, path)
     )
   }
@@ -218,6 +219,11 @@ class V1Validator {
     if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
       this.recordError(`Invalid identifier: "${name}". Must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/`, path);
     }
+
+    const langs = checkForKeyword(name)
+    if (langs) {
+      this.recordWarning(`Potentially Invalid identifier: "${name}". This is a keyword in the following languages and may cause trouble with code generation: ${langs.join(',')}`, path)
+    }
   }
 
   getLocation(suffix: string[] = []): string {
@@ -234,14 +240,18 @@ function stringify(typ: any): string {
   return `${typ}`
 }
 
+export interface ParseResults {
+  errors: ValidationError[];
+  warnings: ValidationError[];
+}
 
 // Main Schema export interface
-export interface V0Schema {
+export interface V0Schema extends ParseResults {
   version: Version;
   exports: SimpleExport[];
 }
 
-export interface V1Schema {
+export interface V1Schema extends ParseResults {
   version: Version;
   exports: { [name: string]: Export };
   imports?: { [name: string]: Import };

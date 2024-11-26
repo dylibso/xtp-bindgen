@@ -232,11 +232,69 @@ test('parse-v1-additional-props-doc', () => {
   }
 })
 
+test('parse-v1-invalid-keyword-doc', () => {
+  const invalidV1Doc: any = yaml.load(fs.readFileSync('./tests/schemas/v1-invalid-keyword-doc.yaml', 'utf8'))
+  try {
+    const doc = parse(JSON.stringify(invalidV1Doc))
+    const expectedErrors = [
+      new ValidationError(
+        "Potentially Invalid identifier: \"Break\". This is a keyword in the following languages and may cause trouble with code generation: python,go,csharp,rust,cpp,zig",
+        "#/components/schemas/Break",
+      ),
+      new ValidationError(
+        "Potentially Invalid identifier: \"abstract\". This is a keyword in the following languages and may cause trouble with code generation: csharp,rust",
+        "#/components/schemas/Break/properties/abstract",
+      ),
+      new ValidationError(
+        "Potentially Invalid identifier: \"addrspace\". This is a keyword in the following languages and may cause trouble with code generation: zig",
+        "#/components/schemas/Break/properties/addrspace",
+      ),
+      new ValidationError(
+        "Potentially Invalid identifier: \"alignas\". This is a keyword in the following languages and may cause trouble with code generation: cpp",
+        "#/components/schemas/Break/properties/alignas",
+      ),
+      new ValidationError(
+        "Potentially Invalid identifier: \"and\". This is a keyword in the following languages and may cause trouble with code generation: python,cpp,zig",
+        "#/components/schemas/Break/properties/and",
+      ),
+      new ValidationError(
+        "Potentially Invalid identifier: \"as\". This is a keyword in the following languages and may cause trouble with code generation: python,csharp,rust",
+        "#/components/schemas/Break/properties/as",
+      ),
+      new ValidationError(
+        "Potentially Invalid identifier: \"interface\". This is a keyword in the following languages and may cause trouble with code generation: go,csharp",
+        "#/components/schemas/Break/properties/interface",
+      ),
+      new ValidationError(
+        "Potentially Invalid identifier: \"type\". This is a keyword in the following languages and may cause trouble with code generation: go,rust",
+        "#/components/schemas/Break/properties/type",
+      ),
+      new ValidationError(
+        "Potentially Invalid identifier: \"false\". This is a keyword in the following languages and may cause trouble with code generation: python,csharp,rust,cpp",
+        "#/exports/false",
+      ),
+      new ValidationError(
+        "Potentially Invalid identifier: \"true\". This is a keyword in the following languages and may cause trouble with code generation: python,csharp,rust,cpp",
+        "#/imports/true",
+      ),
+    ]
+
+
+    expectValidationErrors(doc.warnings, expectedErrors)
+  } catch (e) {
+    console.log(e)
+    expect(true).toBe('should not have thrown')
+  }
+})
+
+function expectValidationErrors(given: ValidationError[], expected: ValidationError[]) {
+  const sortByPath = (a: ValidationError, b: ValidationError) => a.path.localeCompare(b.path);
+  expect([...given].sort(sortByPath)).toEqual([...expected].sort(sortByPath));
+}
+
 function expectErrors(e: any, expectedErrors: ValidationError[]) {
   if (e instanceof NormalizeError) {
-    const sortByPath = (a: ValidationError, b: ValidationError) => a.path.localeCompare(b.path);
-    expect([...e.errors].sort(sortByPath)).toEqual([...expectedErrors].sort(sortByPath));
-
+    expectValidationErrors(e.errors, expectedErrors)
     return
   }
 

@@ -6,17 +6,17 @@ const invalidV1Doc: any = yaml.load(fs.readFileSync('./tests/schemas/v1-invalid-
 const validV1Doc: any = yaml.load(fs.readFileSync('./tests/schemas/v1-valid-doc.yaml', 'utf8'))
 
 test("parse-empty-v1-document", () => {
-  const { errors } = parseAny({})
-  expect(errors).toBeInstanceOf(Array)
+  const doc = parseAny({})
+  expect(doc.errors).toBeInstanceOf(Array)
 
-  expect(errors![0].path).toEqual("#/version")
+  expect(doc.errors![0].path).toEqual("#/version")
 })
 
 test("parse-invalid-v1-document", () => {
-  const { errors } = parseAny(invalidV1Doc)
-  expect(errors).toBeInstanceOf(Array)
+  const doc = parseAny(invalidV1Doc)
+  expect(doc.errors).toBeInstanceOf(Array)
 
-  const paths = errors!.map(e => e.path)
+  const paths = doc.errors!.map(e => e.path)
   expect(paths).toStrictEqual([
     "#/exports/invalidFunc1/input",
     "#/exports/invalidFunc1/output",
@@ -28,8 +28,9 @@ test("parse-invalid-v1-document", () => {
 })
 
 test("parse-valid-v1-document", () => {
-  const { doc, errors } = parseAny(validV1Doc)
-  expect(errors).toStrictEqual([])
+  const doc = parseAny(validV1Doc)
+  expect(doc.errors).toStrictEqual([])
+  expect(doc.warnings).toStrictEqual([])
 
   const schema = doc as V1Schema
 

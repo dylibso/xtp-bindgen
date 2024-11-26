@@ -58,7 +58,7 @@ export type SchemaMap = {
 }
 
 // Main Schema export interface
-export interface XtpSchema {
+export interface XtpSchema extends parser.ParseResults {
   version: Version;
   exports: Export[];
   imports: Import[];
@@ -86,10 +86,12 @@ export function isExport(e: any): e is Export {
 // These are the same for now
 export type Import = Export
 
-function normalizeV0Schema(parsed: parser.V0Schema): { schema: XtpSchema, errors: ValidationError[] } {
+function normalizeV0Schema(parsed: parser.V0Schema): XtpSchema {
   const exports: Export[] = []
   const imports: Import[] = []
   const schemas = {}
+  const errors = parsed.errors
+  const warnings = parsed.warnings
 
   parsed.exports.forEach(ex => {
     exports.push({
@@ -98,13 +100,12 @@ function normalizeV0Schema(parsed: parser.V0Schema): { schema: XtpSchema, errors
   })
 
   return {
-    schema: {
-      version: 'v0',
-      exports,
-      imports,
-      schemas,
-    },
-    errors: []
+    version: 'v0',
+    exports,
+    imports,
+    schemas,
+    errors,
+    warnings,
   }
 }
 
@@ -197,10 +198,13 @@ class V1SchemaNormalizer {
   imports: Import[] = []
   schemas: SchemaMap = {}
   parsed: parser.V1Schema
-  errors: ValidationError[] = []
+  errors: ValidationError[]
+  warnings: ValidationError[]
 
   constructor(parsed: parser.V1Schema) {
     this.parsed = parsed
+    this.errors = parsed.errors
+    this.warnings = parsed.warnings
   }
 
   normalize(): XtpSchema {
@@ -269,6 +273,8 @@ class V1SchemaNormalizer {
       exports: this.exports,
       imports: this.imports,
       schemas: this.schemas,
+      errors: this.errors,
+      warnings: this.warnings,
     }
   }
 
@@ -366,26 +372,20 @@ class V1SchemaNormalizer {
   }
 }
 
-function normalizeV1Schema(parsed: parser.V1Schema): { schema: XtpSchema, errors: ValidationError[] } {
+function normalizeV1Schema(parsed: parser.V1Schema): XtpSchema {
   const normalizer = new V1SchemaNormalizer(parsed)
   const schema = normalizer.normalize()
-  return { schema, errors: normalizer.errors }
+  return schema
 }
 
 export function parseAndNormalizeJson(encoded: string): XtpSchema {
-  const { doc, errors } = parser.parseAny(JSON.parse(encoded))
-  assert(errors)
+  const doc = parser.parseAny(JSON.parse(encoded))
+  assert(doc)
 
   if (parser.isV0Schema(doc)) {
-    const { schema, errors } = normalizeV0Schema(doc)
-    assert(errors)
-
-    return schema
+    return assert(normalizeV0Schema(doc))
   } else if (parser.isV1Schema(doc)) {
-    const { schema, errors } = normalizeV1Schema(doc)
-    assert(errors)
-
-    return schema
+    return assert(normalizeV1Schema(doc))
   } else {
     throw new NormalizeError("Could not normalize unknown version of schema", [{
       message: "Could not normalize unknown version of schema",
@@ -394,7 +394,8 @@ export function parseAndNormalizeJson(encoded: string): XtpSchema {
   }
 }
 
-function assert(errors: ValidationError[] | undefined): void {
+function assert(results: parser.ParseResults): any {
+  const { errors } = results
   if (errors && errors.length > 0) {
     if (errors.length === 1) {
       throw new NormalizeError(errors[0].message, errors)
@@ -402,6 +403,7 @@ function assert(errors: ValidationError[] | undefined): void {
       throw new NormalizeError(`${errors[0].message} (and ${errors.length - 1} other error(s))`, errors)
     }
   }
+  return results
 }
 
 export class NormalizeError extends Error {
