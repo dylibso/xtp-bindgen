@@ -278,7 +278,8 @@ class V1SchemaNormalizer {
     }
   }
 
-  // NOTE: this $ref should already be validated as pointing to a schema in the parser
+  // NOTE: we may want to relax this again so we can keep normalizing
+  // even if a ref is invalid
   querySchemaRef(ref: string): Schema {
     const parts = ref.split('/')
     const name = parts[3]
