@@ -194,7 +194,12 @@ class V1Validator {
     }
 
     if (prop.items) this.validateTypedInterface(prop.items)
-    if (prop.additionalProperties) this.validateTypedInterface(prop.additionalProperties)
+    if (prop.additionalProperties) {
+      if (prop.type !== 'object') {
+        this.recordError(`The parent type must be 'object' when using additionalProperties but your type is ${prop.type}`)
+      }
+      this.validateTypedInterface(prop.additionalProperties)
+    }
 
     // if we have a $ref, validate it
     if (prop.$ref) {

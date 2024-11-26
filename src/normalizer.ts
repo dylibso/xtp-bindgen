@@ -289,11 +289,16 @@ class V1SchemaNormalizer {
     if (!s || typeof s !== 'object' || Array.isArray(s)) return undefined
     if (s.xtpType) return s.xtpType
 
-    if ((s.type && s.type === 'object') ||
-      (s.properties && s.properties.length > 0)) {
+    if (s.type && s.type === 'object' && s.additionalProperties) {
+      s.type = 'map'
+      const valueType = this.annotateType(s.additionalProperties)
+      return valueType ? new MapType(valueType, s) : undefined
+    }
+
+    if ((s.type && s.type === 'object')
+      || (s.properties && s.properties.length > 0)) {
 
       s.type = 'object'
-
       const properties: XtpNormalizedType[] = []
       if (s.properties) {
         for (const pname in s.properties) {
@@ -310,6 +315,7 @@ class V1SchemaNormalizer {
         // untyped object
         return new ObjectType('', [], s)
       }
+
     }
 
     if (s.$ref) {
@@ -332,12 +338,6 @@ class V1SchemaNormalizer {
     if (s.items) {
       const itemType = this.annotateType(s.items)
       return itemType ? new ArrayType(itemType, s) : undefined
-    }
-
-    if (s.additionalProperties) {
-      s.type = 'map'
-      const valueType = this.annotateType(s.additionalProperties)
-      return valueType ? new MapType(valueType, s) : undefined
     }
 
     switch (s.type) {

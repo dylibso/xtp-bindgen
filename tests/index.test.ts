@@ -222,10 +222,18 @@ test('parse-v1-additional-props-doc', () => {
     expect(true).toBe('should have thrown')
   } catch (e) {
     const expectedErrors = [
-      {
-        message: 'We currently do not support objects with both fixed properties and additionalProperties',
-        path: '#/components/schemas/MixedObject'
-      },
+      new ValidationError(
+        'We currently do not support objects with both fixed properties and additionalProperties',
+        '#/components/schemas/MixedObject'
+      ),
+      new ValidationError(
+        "The parent type must be 'object' when using additionalProperties but your type is undefined",
+        "#/components/schemas/MixedObject",
+      ),
+      new ValidationError(
+        "The parent type must be 'object' when using additionalProperties but your type is string",
+        "#/components/schemas/NonObjectType/properties/myMap",
+      ),
     ]
 
     expectErrors(e, expectedErrors)
@@ -282,7 +290,6 @@ test('parse-v1-invalid-keyword-doc', () => {
 
     expectValidationErrors(doc.warnings, expectedErrors)
   } catch (e) {
-    console.log(e)
     expect(true).toBe('should not have thrown')
   }
 })
