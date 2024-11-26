@@ -11,11 +11,11 @@ import { checkForKeyword } from "./keywords";
  * Parses and validates an untyped object into a V*Schema
  */
 export function parseAny(doc: any): VUnknownSchema {
+  doc.errors = []
+  doc.warnings = []
   switch (doc.version) {
     case 'v0':
       const v0Doc = doc as V0Schema
-      v0Doc.errors = []
-      v0Doc.warnings = []
       return v0Doc
     case 'v1-draft':
       const v1Doc = doc as V1Schema
@@ -23,9 +23,9 @@ export function parseAny(doc: any): VUnknownSchema {
       validator.validate()
       return v1Doc
     default:
-      doc.errors = [
+      doc.errors.push(
         new ValidationError(`version property not valid: ${doc.version}`, "#/version")
-      ]
+      )
       return doc
   }
 }
