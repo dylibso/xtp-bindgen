@@ -19,11 +19,6 @@
     "typescript": "^5.3.2"
   },
   "dependencies": {
-    "@dylibso/xtp-bindgen": "file://../",
-    "ajv": "^8.17.1",
-    "js-yaml": "^4.1.0"
-  },
-  "overrides": {
-    "fast-uri": "github:dylibso/fast-uri#remove-unicode-flags-from-regex"
+    "@dylibso/xtp-bindgen": "file://../"
   }
 }
