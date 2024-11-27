@@ -21,7 +21,6 @@
     "esbuild": "^0.17.0",
     "esbuild-plugin-d.ts": "^1.2.3",
     "jest": "^29.0.0",
-    "js-yaml": "^4.1.0",
     "ts-jest": "^29.0.0",
     "typescript": "^5.6.3"
   },
@@ -32,7 +31,8 @@
   "author": "Dylibso, Inc.",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "ajv": "^8.17.1"
+    "ajv": "^8.17.1",
+    "js-yaml": "^4.1.0"
   },
   "overrides": {
     "fast-uri": "github:dylibso/fast-uri#remove-unicode-flags-from-regex"
