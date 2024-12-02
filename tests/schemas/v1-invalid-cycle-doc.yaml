@@ -13,11 +13,13 @@ exports:
 components:
   schemas:
     ComplexObject:
+      type: object
       description: A complex json object
       properties:
         cycle:
           "$ref": "#/components/schemas/AnotherType"
     AnotherType:
+      type: object
       description: Another type
       properties:
         complexObject:

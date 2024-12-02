@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://xtp.dylibso.com/assets/wasm/schema.json
+# yaml-language-server: $schema=../../schema.json
 ---
 version: v1-draft
 exports:
@@ -7,9 +7,6 @@ exports:
     input:
       contentType: application/json
       "$ref": "#/components/schemas/NonExistentExportInputRef"
-    output:
-      contentType: application/json
-      "$ref": "some invalid ref"
 imports:
   invalidImport:
     description: |
@@ -24,6 +21,7 @@ imports:
 components:
   schemas:
     ComplexObject:
+      type: object
       description: A complex json object
       required:
         - ghost
