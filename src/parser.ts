@@ -11,8 +11,8 @@ import { checkForKeyword } from "./keywords";
  * Parses and validates an untyped object into a V*Schema
  */
 export function parseAny(doc: any): VUnknownSchema {
-  doc.errors = []
-  doc.warnings = []
+  doc.errors = doc.errors || []
+  doc.warnings = doc.warnings || []
   switch (doc.version) {
     case 'v0':
       const v0Doc = doc as V0Schema

@@ -1,0 +1,58 @@
+versions:
+  v1:
+    status: Draft
+    changes:
+      - category: New Features
+        date: 25-11-2024
+        description:
+          - "Added Map types (MapParameter, MapProperty, MapArrayItem) to support dynamic key-value structures"
+          - "Made `description` field optional for ObjectSchema"
+          - "Expanded CodeSample `lang` to support multiple languages: csharp, zig, rust, go, python, c++"
+          - "Added identifier pattern validation (^[a-zA-Z_$][a-zA-Z0-9_$]*$) for enum values and export/import names"
+          - "Enhanced ObjectSchema `properties` structure with additional validation"
+
+      - category: Breaking Changes
+        date: 05-08-2024
+        description:
+          - "Exports are now defind as a map of objects."
+          - "Imports are now defined as a map of objects."
+          - "`schemas` is now a child of `components` and is a map of objects."
+          - "`contentType` is now on Parameter instead of Property."
+          - "Added `nullable` field to Property"
+
+      - category: New Features
+        date: 30-05-2024
+        description:
+          - "Enums can now be defined in the `schemas` section."
+          - "Exports/imports can now take/return enums."
+
+      - category: New Features
+        date: 24-05-2024
+        description:
+          - "Added string and buffer parameters to exports and imports."
+          - "Renamed `ref` to `$ref` in RefProperty and RefParameter"
+
+      - category: New Features
+        date: 20-05-2024
+        description:
+          - "Added ability to define imports. Imports are limited to host functions for now."
+
+      - category: New Features
+        date: 12-05-2024
+        description: 
+          - "Exports are now defined as a list of objects or strings."
+          - "Added `input` field to export, allowing for specifying input requirements."
+          - "Added `output` field to export, enabling definition of output formats."
+          - "Added `codeSamples` field to export, facilitating inclusion of code examples."
+          - "Added `description` field to export, providing space for detailed descriptions."
+          - "Added support for defining custom types under `schemas`."
+
+  v0:
+    status: Stable
+    changes:
+      - category: New Features
+        date: 22-04-2024
+        description: 
+          - "Initial version of the schema."
+          - "Exports are defined as a list of strings."
+          - "v0 is now considered stable."

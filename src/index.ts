@@ -4,7 +4,7 @@ import {
   isExport,
   isProperty,
   Parameter,
-  parseAndNormalizeJson,
+  parseAndNormalize,
   Property,
   XtpSchema,
 } from "./normalizer";
@@ -13,9 +13,21 @@ import { XtpNormalizedType } from "./types";
 export * from "./normalizer";
 export * from "./types";
 export { ValidationError } from "./common";
+import YAML from "js-yaml";
 
-export function parse(schema: string) {
-  return parseAndNormalizeJson(schema);
+// keep for backwards compat
+export function parse(schema: string): XtpSchema {
+  return parseJson(schema);
+}
+
+// use this instead of `parse`
+export function parseJson(schema: string): XtpSchema {
+  return parseAndNormalize(JSON.parse(schema));
+}
+
+// use this one for yaml
+export function parseYaml(schema: string): XtpSchema {
+  return parseAndNormalize(YAML.load(schema));
 }
 
 export interface XtpProject {

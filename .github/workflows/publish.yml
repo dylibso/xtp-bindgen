@@ -21,8 +21,31 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Compile Plug-in
+        run: |
+          cd plugin
+          npm i
+          npm run build
+
       - name: Publish to npm
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_API_TOKEN }}
+
+      - name: Release Plug-in and Schema
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.STATIC_S3_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.STATIC_S3_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-2
+        run: |
+          aws s3 cp ${{ github.workspace }}/schema.json s3://static.dylibso.com/schema.json --acl public-read
+          aws s3 cp ${{ github.workspace }}/plugin/dist/plugin.wasm s3://static.dylibso.com/schema.wasm --acl public-read
+
+      - name: Purge Cloudflare Cache
+        run: |
+          curl \
+            -X POST \
+            -H  "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
+            -d '{"files": ["https://static.dylibso.com/schema.json", "https://static.dylibso.com/schema.wasm"]}' \
+            https://api.cloudflare.com/client/v4/zones/58f3d5deef300e01c4262266b00fdf4a/purge_cache
 
