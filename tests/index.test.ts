@@ -307,6 +307,23 @@ test('parse-v1-invalid-keyword-doc', () => {
   }
 })
 
+test('parse-v1-invalid-json-schema-doc', () => {
+  const invalidV1Doc: any = yaml.load(fs.readFileSync('./tests/schemas/v1-invalid-json-schema.yaml', 'utf8'))
+  try {
+    parse(JSON.stringify(invalidV1Doc))
+    expect(true).toBe('should have thrown')
+  } catch (e) {
+    const expectedErrors = [
+      new ValidationError(
+        "must NOT have additional properties. Params: {\"additionalProperty\":\"idontbelonghere\"}",
+        "#",
+      ),
+    ]
+
+    expectErrors(e, expectedErrors)
+  }
+})
+
 function expectValidationErrors(given: ValidationError[], expected: ValidationError[]) {
   const sortByPath = (a: ValidationError, b: ValidationError) => a.path.localeCompare(b.path);
   expect([...given].sort(sortByPath)).toEqual([...expected].sort(sortByPath));

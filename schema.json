@@ -403,7 +403,9 @@
             {
               "not": {
                 "type": "object",
-                "required": ["description"]
+                "required": [
+                  "description"
+                ]
               }
             }
           ]
@@ -534,7 +536,9 @@
             {
               "not": {
                 "type": "object",
-                "required": ["description"]
+                "required": [
+                  "description"
+                ]
               }
             }
           ]

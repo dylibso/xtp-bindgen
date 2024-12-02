@@ -404,13 +404,9 @@ export function parseAndNormalize(rawDoc: any): XtpSchema {
   if (!validate(rawDoc)) {
     errors.push(...validate.errors!.map((error) => {
       const err = new ValidationError(
+        `${error.message!}${error.params ? ". Params: " + JSON.stringify(error.params) : ""}`,
         error.instancePath ? error.instancePath : "#",
-        error.message!,
       )
-
-      if (!err.path) {
-        err.path = "#";
-      }
 
       return err;
     }))
