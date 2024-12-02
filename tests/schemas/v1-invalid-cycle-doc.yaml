@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://xtp.dylibso.com/assets/wasm/schema.json
+# yaml-language-server: $schema=../../schema.json
 ---
 version: v1-draft
 exports:
