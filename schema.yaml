@@ -1,12 +1,16 @@
 ---
 "$schema": http://json-schema.org/draft-07/schema#
 type: object
+
+# Every document requires a version
 properties:
   version:
-    "$ref": "#/$defs/XtpVersion"
+    $ref: "#/$defs/XtpVersion"
 required:
   - version
+
 allOf:
+  # In v0 we only support simple named exports
   - if:
       properties:
         version:
@@ -21,8 +25,9 @@ allOf:
         version:
           const: v0
       required:
-      - exports
+        - exports
       additionalProperties: false
+  # In v1 we support complex exports, imports, and components
   - if:
       properties:
         version:
@@ -30,18 +35,18 @@ allOf:
     then:
       properties:
         version:
-          "$ref": "#/$defs/XtpVersion"
+          $ref: "#/$defs/XtpVersion"
         exports:
           type: object
           patternProperties:
             "^[a-zA-Z_$][a-zA-Z0-9_$]*$":
-              "$ref": "#/$defs/Export"
+              $ref: "#/$defs/Export"
           additionalProperties: false
         imports:
           type: object
           patternProperties:
             "^[a-zA-Z_$][a-zA-Z0-9_$]*$":
-              "$ref": "#/$defs/Import"
+              $ref: "#/$defs/Import"
           additionalProperties: false
         components:
           type: object
@@ -50,20 +55,21 @@ allOf:
               type: object
               patternProperties:
                 "^[a-zA-Z_$][a-zA-Z0-9_$]*$":
-                  "$ref": "#/$defs/Schema"
+                  $ref: "#/$defs/Schema"
               additionalProperties: false
           required:
-          - schemas
+            - schemas
           additionalProperties: false
       required:
-      - exports
+        - exports
       additionalProperties: false
-"$defs":
+$defs:
   XtpVersion:
     type: string
     enum:
       - v0
       - v1-draft
+
   Export:
     type: object
     properties:
@@ -72,12 +78,13 @@ allOf:
       codeSamples:
         type: array
         items:
-          "$ref": "#/$defs/CodeSample"
+          $ref: "#/$defs/CodeSample"
       input:
-        "$ref": "#/$defs/Parameter"
+        $ref: "#/$defs/Parameter"
       output:
-        "$ref": "#/$defs/Parameter"
+        $ref: "#/$defs/Parameter"
     additionalProperties: false
+
   CodeSample:
     type: object
     properties:
@@ -85,13 +92,13 @@ allOf:
         anyOf:
           - type: string
             enum:
-            - typescript
-            - csharp
-            - zig
-            - rust
-            - go
-            - python
-            - c++
+              - typescript
+              - csharp
+              - zig
+              - rust
+              - go
+              - python
+              - c++
           - type: string
       source:
         type: string
@@ -101,88 +108,50 @@ allOf:
       - lang
       - source
     additionalProperties: false
+
   Import:
     type: object
     properties:
       description:
         type: string
       input:
-        "$ref": "#/$defs/Parameter"
+        $ref: "#/$defs/Parameter"
       output:
-        "$ref": "#/$defs/Parameter"
+        $ref: "#/$defs/Parameter"
     additionalProperties: false
-  ObjectProperty:
-    type: object
-    properties:
-      type:
-        const: object
-      properties:
-        type: object
-        patternProperties:
-          "^[a-zA-Z_$][a-zA-Z0-9_$]*$":
-            "$ref": "#/$defs/Property"
-        additionalProperties: false
-      required:
-        type: array
-        items:
-          type: string
-      description:
-        type: string
-      nullable:
-        type: boolean
-        default: false
-    required:
-      - type
-      - properties
-    additionalProperties: false
-  EnumProperty:
-    type: object
-    properties:
-      type:
-        const: string
-      enum:
-        type: array
-        items:
-          type: string
-      description:
-        type: string
-      nullable:
-        type: boolean
-        default: false
-    required:
-      - type
-      - enum
-    additionalProperties: false
+
   Parameter:
     oneOf:
-      - "$ref": "#/$defs/ValueParameter"
-      - "$ref": "#/$defs/RefParameter"
-      - "$ref": "#/$defs/MapParameter"
+      - $ref: "#/$defs/ValueParameter"
+      - $ref: "#/$defs/RefParameter"
+      - $ref: "#/$defs/MapParameter"
+
   RefParameter:
     type: object
     properties:
-      "$ref":
-        "$ref": "#/$defs/SchemaReference"
+      $ref:
+        $ref: "#/$defs/SchemaReference"
       description:
         type: string
       nullable:
         type: boolean
         default: false
       contentType:
-        "$ref": "#/$defs/ContentType"
+        $ref: "#/$defs/ContentType"
     required:
-      - "$ref"
+      - $ref
       - contentType
     additionalProperties: false
+
   ValueParameter:
     type: object
     properties:
       contentType:
-        "$ref": "#/$defs/ContentType"
+        $ref: "#/$defs/ContentType"
       type:
-        "$ref": "#/$defs/XtpType"
+        $ref: "#/$defs/XtpType"
       format:
-        "$ref": "#/$defs/XtpFormat"
+        $ref: "#/$defs/XtpFormat"
       nullable:
         type: boolean
         default: false
@@ -190,11 +159,12 @@ allOf:
         type: string
       items:
         type: object
-        "$ref": "#/$defs/Property"
+        $ref: "#/$defs/Property"
     required:
       - type
       - contentType
     additionalProperties: false
+
   MapParameter:
     type: object
     properties:
@@ -208,24 +178,26 @@ allOf:
         type: boolean
         default: false
       contentType:
-        "$ref": "#/$defs/ContentType"
+        $ref: "#/$defs/ContentType"
     required:
       - additionalProperties
       - contentType
+
   Property:
     oneOf:
-      - "$ref": "#/$defs/ValueProperty"
-      - "$ref": "#/$defs/RefProperty"
-      - "$ref": "#/$defs/MapProperty"
+      - $ref: "#/$defs/ValueProperty"
+      - $ref: "#/$defs/RefProperty"
+      - $ref: "#/$defs/MapProperty"
+
   Schema:
     allOf:
       # Schema is one of these types
       - oneOf:
-        - "$ref": "#/$defs/ObjectProperty"
-        - "$ref": "#/$defs/EnumProperty"
-        - "$ref": "#/$defs/ValueProperty"
-        - "$ref": "#/$defs/RefProperty"
-        - "$ref": "#/$defs/MapProperty"
+        - $ref: "#/$defs/ObjectProperty"
+        - $ref: "#/$defs/EnumProperty"
+        - $ref: "#/$defs/ValueProperty"
+        - $ref: "#/$defs/RefProperty"
+        - $ref: "#/$defs/MapProperty"
       # But we can apply these checks to make the
       # error messages more specific
       - type: object
@@ -258,13 +230,58 @@ allOf:
           properties:
             format:
               enum: [uint8, int8, uint16, int16, uint32, int32, uint64, int64]
+
+  ObjectProperty:
+    type: object
+    properties:
+      type:
+        const: object
+      properties:
+        type: object
+        patternProperties:
+          "^[a-zA-Z_$][a-zA-Z0-9_$]*$":
+            $ref: "#/$defs/Property"
+        additionalProperties: false
+      required:
+        type: array
+        items:
+          type: string
+      description:
+        type: string
+      nullable:
+        type: boolean
+        default: false
+    required:
+      - type
+      - properties
+    additionalProperties: false
+
+  EnumProperty:
+    type: object
+    properties:
+      type:
+        const: string
+      enum:
+        type: array
+        items:
+          type: string
+      description:
+        type: string
+      nullable:
+        type: boolean
+        default: false
+    required:
+      - type
+      - enum
+    additionalProperties: false
+
   ValueProperty:
     type: object
     properties:
       type:
-        "$ref": "#/$defs/XtpType"
+        $ref: "#/$defs/XtpType"
       format:
-        "$ref": "#/$defs/XtpFormat"
+        $ref: "#/$defs/XtpFormat"
       nullable:
         type: boolean
         default: false
@@ -272,10 +289,11 @@ allOf:
         type: string
       items:
         type: object
-        "$ref": "#/$defs/Property"
+        $ref: "#/$defs/Property"
     required:
       - type
     additionalProperties: false
+
   MapProperty:
     type: object
     properties:
@@ -284,35 +302,39 @@ allOf:
       description:
         type: string
       additionalProperties:
-        "$ref": "#/$defs/Property"
+        $ref: "#/$defs/Property"
       nullable:
         type: boolean
         default: false
     required:
       - additionalProperties
     additionalProperties: false
+
   RefProperty:
     type: object
     properties:
-      "$ref":
-        "$ref": "#/$defs/SchemaReference"
+      $ref:
+        $ref: "#/$defs/SchemaReference"
       description:
         type: string
       nullable:
         type: boolean
         default: false
     required:
-      - "$ref"
+      - $ref
     additionalProperties: false
+
   ContentType:
     type: string
     enum:
       - application/json
       - application/x-binary
       - text/plain; charset=utf-8
+
   SchemaReference:
     type: string
     pattern: "^#/components/schemas/[^/]+$"
+
   XtpType:
     type: string
     enum:
@@ -323,6 +345,7 @@ allOf:
       - object
       - array
       - buffer
+
   XtpFormat:
     type: string
     enum:

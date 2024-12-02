@@ -173,67 +173,6 @@
       },
       "additionalProperties": false
     },
-    "ObjectProperty": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "object"
-        },
-        "properties": {
-          "type": "object",
-          "patternProperties": {
-            "^[a-zA-Z_$][a-zA-Z0-9_$]*$": {
-              "$ref": "#/$defs/Property"
-            }
-          },
-          "additionalProperties": false
-        },
-        "required": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "description": {
-          "type": "string"
-        },
-        "nullable": {
-          "type": "boolean",
-          "default": false
-        }
-      },
-      "required": [
-        "type",
-        "properties"
-      ],
-      "additionalProperties": false
-    },
-    "EnumProperty": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "string"
-        },
-        "enum": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "description": {
-          "type": "string"
-        },
-        "nullable": {
-          "type": "boolean",
-          "default": false
-        }
-      },
-      "required": [
-        "type",
-        "enum"
-      ],
-      "additionalProperties": false
-    },
     "Parameter": {
       "oneOf": [
         {
@@ -444,6 +383,67 @@
           }
         }
       ]
+    },
+    "ObjectProperty": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "object"
+        },
+        "properties": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z_$][a-zA-Z0-9_$]*$": {
+              "$ref": "#/$defs/Property"
+            }
+          },
+          "additionalProperties": false
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "nullable": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "type",
+        "properties"
+      ],
+      "additionalProperties": false
+    },
+    "EnumProperty": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "string"
+        },
+        "enum": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "nullable": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "type",
+        "enum"
+      ],
+      "additionalProperties": false
     },
     "ValueProperty": {
       "type": "object",
