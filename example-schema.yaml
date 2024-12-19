@@ -2,13 +2,13 @@
 # Learn more at https://docs.xtp.dylibso.com/docs/concepts/xtp-schema
 version: v1-draft
 exports: 
-  CountVowels:
-      input: 
-          type: string
-          contentType: text/plain; charset=utf-8
-      output:
-          $ref: "#/components/schemas/VowelReport"
-          contentType: application/json
+  countVowels:
+    input:
+      type: string
+      contentType: text/plain; charset=utf-8
+    output:
+      $ref: "#/components/schemas/VowelReport"
+      contentType: application/json
 components:
   schemas:
     VowelReport:

@@ -1,0 +1,6 @@
+bin = "dist/plugin.wasm"
+
+[scripts]
+  build = "npm run build"
+  format = "npm run format"
+  prepare = "npm install"

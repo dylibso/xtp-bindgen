@@ -1,0 +1,23 @@
+{
+  "name": "schema",
+  "version": "1.0.0",
+  "description": "Extism plugin for working with XTP schemas",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "npx tsc --noEmit && node esbuild.js && extism-js dist/index.js -i src/index.d.ts -o dist/plugin.wasm",
+    "format": "npx prettier --write \"src/**/*.{ts,tsx}\""
+  },
+  "keywords": [],
+  "author": "Dylibso, Inc.",
+  "private": true,
+  "license": "BSD-3-Clause",
+  "devDependencies": {
+    "@extism/js-pdk": "^1.0.1",
+    "esbuild": "^0.19.6",
+    "prettier": "^3.3.2",
+    "typescript": "^5.3.2"
+  },
+  "dependencies": {
+    "@dylibso/xtp-bindgen": "file://../"
+  }
+}
