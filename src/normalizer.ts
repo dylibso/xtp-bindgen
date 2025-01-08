@@ -333,7 +333,12 @@ class V1SchemaNormalizer {
       }
 
       s.type = 'object'
-      return this.annotateType(s.$ref)
+      let obj = this.annotateType(s.$ref)
+      if (obj && s.nullable) {
+        obj = {...obj}
+        obj.nullable = s.nullable
+      }
+      return obj
     }
 
     if (s.enum) {
