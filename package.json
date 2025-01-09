@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-rc.16",
+  "version": "1.0.0-rc.17",
   "name": "@dylibso/xtp-bindgen",
   "description": "XTP bindgen helper library",
   "main": "dist/index.js",
@@ -20,7 +20,7 @@
     "const": "^1.0.0",
     "esbuild": "^0.17.0",
     "esbuild-plugin-d.ts": "^1.2.3",
-    "jest": "^29.0.0",
+    "jest": "^29.7.0",
     "js-yaml": "^4.1.0",
     "ts-jest": "^29.0.0",
     "typescript": "^5.6.3"

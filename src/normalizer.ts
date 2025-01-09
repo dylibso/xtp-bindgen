@@ -334,6 +334,9 @@ class V1SchemaNormalizer {
 
       s.type = 'object'
       let obj = this.annotateType(s.$ref)
+
+      // hack, apply nullable to a copy of the referenced object
+      // a copy is made to avoid potentially affecting all instances of the object
       if (obj && s.nullable) {
         obj = {...obj}
         obj.nullable = s.nullable
